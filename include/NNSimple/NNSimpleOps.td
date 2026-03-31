@@ -59,7 +59,7 @@ def NNSimple_ReluOp : NNSimple_Op<"relu", [Pure]> {
     }];
 }
 
-def NNSimple_ConstOp : NNSimple_Op<"const", [Pure]> {
+def NNSimple_ConstOp : NNSimple_Op<"const", [Pure, ConstantLike]> {
     let summary = "Create a constant tensor.";
     let description = [{
         The `nnsimple.const` operation creates a constant tensor with the specified
@@ -67,11 +67,12 @@ def NNSimple_ConstOp : NNSimple_Op<"const", [Pure]> {
         single tensor as output.
     }];
 
-    let arguments = (ins);
-    let results = (outs AnyTensor:$output);
+    let arguments = (ins ElementsAttr:$value);
+    let results = (outs NNSimple_TensorType:$output);
     let assemblyFormat = [{
-        attr-dict `:` type($output)
+        $value attr-dict `:` type($output)
     }];
+    let hasVerifier = 1;
 }
 
 def NNSimple_FusedAddReluOp : NNSimple_Op<"fused_add_relu", [Pure, Commutative]> {
