@@ -1,0 +1,88 @@
+//===- NNSimpleExtension.cpp - Extension module ----------------------------===//
+//
+// This is the nanobind version of the example module.
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+
+#include "NNSimple-c/Dialects.h"
+#include "mlir-c/Dialect/Arith.h"
+#include "mlir/Bindings/Python/IRCore.h"
+#include "mlir/Bindings/Python/IRTypes.h"
+#include "mlir/Bindings/Python/Nanobind.h"
+#include "mlir/Bindings/Python/NanobindAdaptors.h"
+
+namespace nb = nanobind;
+
+struct PyCustomType
+    : mlir::python::MLIR_BINDINGS_PYTHON_DOMAIN::PyConcreteType<PyCustomType> {
+  static constexpr IsAFunctionTy isaFunction = mlirNNSimpleTypeIsACustomType;
+  static constexpr GetTypeIDFunctionTy getTypeIdFunction =
+      mlirNNSimpleCustomTypeGetTypeID;
+  static constexpr const char *pyClassName = "CustomType";
+  using PyConcreteType::PyConcreteType;
+
+  static void bindDerived(ClassTy &c) {
+    c.def_static(
+        "get",
+        [](const std::string &value,
+           mlir::python::MLIR_BINDINGS_PYTHON_DOMAIN::DefaultingPyMlirContext
+               context) {
+          return PyCustomType(
+              context->getRef(),
+              mlirNNSimpleCustomTypeGet(
+                  context.get()->get(),
+                  mlirStringRefCreateFromCString(value.c_str())));
+        },
+        nb::arg("value"), nb::arg("context").none() = nb::none());
+  }
+};
+
+NB_MODULE(_nnsimpleDialectsNanobind, m) {
+  //===--------------------------------------------------------------------===//
+  // nnsimple dialect
+  //===--------------------------------------------------------------------===//
+  auto nnsimpleM = m.def_submodule("nnsimple");
+
+  PyCustomType::bind(nnsimpleM);
+
+  nnsimpleM.def(
+      "register_dialects",
+      [](mlir::python::MLIR_BINDINGS_PYTHON_DOMAIN::DefaultingPyMlirContext
+             context,
+         bool load) {
+        MlirDialectHandle arithHandle = mlirGetDialectHandle__arith__();
+        MlirDialectHandle nnsimpleHandle =
+            mlirGetDialectHandle__nnsimple__();
+        MlirContext context_ = context.get()->get();
+        mlirDialectHandleRegisterDialect(arithHandle, context_);
+        mlirDialectHandleRegisterDialect(nnsimpleHandle, context_);
+        if (load) {
+          mlirDialectHandleLoadDialect(arithHandle, context_);
+          mlirDialectHandleRegisterDialect(nnsimpleHandle, context_);
+        }
+      },
+      nb::arg("context").none() = nb::none(), nb::arg("load") = true);
+
+  nnsimpleM.def(
+      "print_fp_type",
+      [](const mlir::python::MLIR_BINDINGS_PYTHON_DOMAIN::PyF16Type &,
+         nb::handle stderr_obj) {
+        nb::print("this is a fp16 type", /*end=*/nb::handle(), stderr_obj);
+      });
+  nnsimpleM.def(
+      "print_fp_type",
+      [](const mlir::python::MLIR_BINDINGS_PYTHON_DOMAIN::PyF32Type &,
+         nb::handle stderr_obj) {
+        nb::print("this is a fp32 type", /*end=*/nb::handle(), stderr_obj);
+      });
+  nnsimpleM.def(
+      "print_fp_type",
+      [](const mlir::python::MLIR_BINDINGS_PYTHON_DOMAIN::PyF64Type &,
+         nb::handle stderr_obj) {
+        nb::print("this is a fp64 type", /*end=*/nb::handle(), stderr_obj);
+      });
+}
