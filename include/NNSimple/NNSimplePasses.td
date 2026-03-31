@@ -27,4 +27,17 @@ def NNSimpleSwitchBarFoo: Pass<"nnsimple-switch-bar-foo", "::mlir::ModuleOp"> {
   }];
 }
 
+def NNSimpleFuseAddRelu: Pass<"nnsimple-fuse-add-relu", "::mlir::func::FuncOp"> {
+  let summary = "Fuses an add followed by a relu into a single fused op.";
+  let description = [{
+    Fuses an add followed by a relu into a single fused op.
+    ```
+    %1 = nnsimple.add %a, %b : tensor<4xf32>
+    %2 = nnsimple.relu %1 : tensor<4xf32>
+    // Gets transformed to:
+    %2 = nnsimple.fused_add_relu %a, %b : tensor<4xf32>
+    ```
+  }];
+}
+
 #endif // NNSIMPLE_PASS

@@ -13,33 +13,6 @@ include "NNSimple/NNSimpleTypes.td"
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
-def NNSimple_FooOp : NNSimple_Op<"foo", [Pure,
-                                             SameOperandsAndResultType]> {
-    let summary = "Illustrates how to define an operation.";
-    let description = [{
-        The `nnsimple.foo` operation illustrates how to define a new
-        operation in a dialect. It uses an operation trait to declare that it
-        has no side effects.
-
-        This operation takes an integer argument and returns an integer.
-
-        Example:
-
-        ```mlir
-        %0 = arith.constant 2 : i32
-        // Apply the foo operation to %0
-        %1 = nnsimple.foo %0 : i32
-        ```
-    }];
-
-    let arguments = (ins I32:$input);
-    let results = (outs I32:$res);
-
-    let assemblyFormat = [{
-        $input attr-dict `:` type($input)
-    }];
-}
-
 def NNSimple_AddOp : NNSimple_Op<"add", [Pure, Commutative]> {
     let summary = "Add two tensors element-wise.";
     let description = [{
@@ -79,8 +52,8 @@ def NNSimple_ReluOp : NNSimple_Op<"relu", [Pure]> {
         a single tensor as output.
     }];
 
-    let arguments = (ins AnyTensor:$input);
-    let results = (outs AnyTensor:$output);
+    let arguments = (ins NNSimple_TensorType:$input);
+    let results = (outs NNSimple_TensorType:$output);
     let assemblyFormat = [{
         $input attr-dict `:` type($input) `->` type($output)
     }];
@@ -98,6 +71,21 @@ def NNSimple_ConstOp : NNSimple_Op<"const", [Pure]> {
     let results = (outs AnyTensor:$output);
     let assemblyFormat = [{
         attr-dict `:` type($output)
+    }];
+}
+
+def NNSimple_FusedAddReluOp : NNSimple_Op<"fused_add_relu", [Pure, Commutative]> {
+    let summary = "Perform fused addition followed by ReLU activation.";
+    let description = [{
+        The `nnsimple.fused_add_relu` operation performs element-wise addition of two
+        tensors followed by the application of the ReLU activation function. It takes
+        two tensors as input and produces a single tensor as output.
+    }];
+
+    let arguments = (ins NNSimple_TensorType:$lhs, NNSimple_TensorType:$rhs);
+    let results = (outs NNSimple_TensorType:$result);
+    let assemblyFormat = [{
+        $lhs `,` $rhs attr-dict `:` `(` type($lhs) `,` type($rhs) `)` `->` type($result)
     }];
 }
 
