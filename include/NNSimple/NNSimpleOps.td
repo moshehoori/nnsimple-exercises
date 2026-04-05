@@ -20,7 +20,6 @@ def NNSimple_AddOp : NNSimple_Op<"add", [Pure, Commutative]> {
         It takes two tensors as input and produces a single tensor as output.
     }];
 
-
     let arguments = (ins NNSimple_TensorType:$lhs, NNSimple_TensorType:$rhs);
     let results = (outs NNSimple_TensorType:$result);
 
@@ -28,6 +27,9 @@ def NNSimple_AddOp : NNSimple_Op<"add", [Pure, Commutative]> {
         $lhs `,` $rhs attr-dict `:` `(` type($lhs) `,` type($rhs) `)` `->` type($result)
     }];
 
+    let hasVerifier = 1;
+    let hasCanonicalizer = 1;
+    let hasFolder = 1;
 }
 
 def NNSimple_MulOp : NNSimple_Op<"mul", [Pure, Commutative]> {
@@ -73,6 +75,7 @@ def NNSimple_ConstOp : NNSimple_Op<"const", [Pure, ConstantLike]> {
         $value attr-dict `:` type($output)
     }];
     let hasVerifier = 1;
+    let hasFolder = 1;
 }
 
 def NNSimple_FusedAddReluOp : NNSimple_Op<"fused_add_relu", [Pure, Commutative]> {

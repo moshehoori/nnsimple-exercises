@@ -26,6 +26,7 @@ def NNSimple_Dialect : Dialect {
     let cppNamespace = "::mlir::nnsimple";
 
     let useDefaultTypePrinterParser = 1;
+    let hasConstantMaterializer = 1;
     let extraClassDeclaration = [{
         void registerTypes();
     }];

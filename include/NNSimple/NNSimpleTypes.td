@@ -58,9 +58,11 @@ def NNSimple_TensorType : NNSimple_Type<"Tensor", "tensor"> {
         ```
     }];
 
-    let parameters = (ins TypeParameter<"::mlir::Type", "element type">:$elementType,
+    let parameters = (ins TypeParameter<"::mlir::FloatType", "float element type">:$elementType,
                          ArrayRefParameter<"int64_t", "shape">:$shape,
                          EnumParameter<NNSimple_DataLayout>:$layout);
+                         
+    
     let assemblyFormat = "`<` $elementType `,` `[` $shape `]` `,` $layout `>`";
 }
 

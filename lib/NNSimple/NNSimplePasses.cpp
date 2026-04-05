@@ -20,61 +20,32 @@ namespace mlir::nnsimple {
 #include "NNSimple/NNSimplePasses.h.inc"
 
 namespace {
-class NNSimpleSwitchBarFooRewriter : public OpRewritePattern<func::FuncOp> {
+class NNSimpleFuseAddReluRewriter : public OpRewritePattern<nnsimple::ReluOp> {
 public:
-  using OpRewritePattern<func::FuncOp>::OpRewritePattern;
-  LogicalResult matchAndRewrite(func::FuncOp op,
+  using OpRewritePattern<nnsimple::ReluOp>::OpRewritePattern;
+  LogicalResult matchAndRewrite(nnsimple::ReluOp reluOp,
                                 PatternRewriter &rewriter) const final {
-    if (op.getSymName() == "bar") {
-      rewriter.modifyOpInPlace(op, [&op]() { op.setSymName("foo"); });
-      return success();
-    }
-    return failure();
+    if (!reluOp.getResult().hasOneUse())
+      return failure();
+    auto addOp = dyn_cast<AddOp>(*reluOp.getOperand().getDefiningOp());
+    if (!addOp)
+      return failure();
+    rewriter.setInsertionPoint(reluOp);
+    auto fusedOp = FusedAddReluOp::create(rewriter, reluOp.getLoc(),
+                                          reluOp.getResult().getType(),
+                                          addOp.getLhs(), addOp.getRhs());
+    rewriter.replaceOp(reluOp, fusedOp.getResult());
+    rewriter.eraseOp(addOp);
+    return success();
   }
 };
-
-class NNSimpleSwitchBarFoo
-    : public impl::NNSimpleSwitchBarFooBase<NNSimpleSwitchBarFoo> {
-public:
-  using impl::NNSimpleSwitchBarFooBase<
-      NNSimpleSwitchBarFoo>::NNSimpleSwitchBarFooBase;
-  void runOnOperation() final {
-    RewritePatternSet patterns(&getContext());
-    patterns.add<NNSimpleSwitchBarFooRewriter>(&getContext());
-    FrozenRewritePatternSet patternSet(std::move(patterns));
-    if (failed(applyPatternsGreedily(getOperation(), patternSet)))
-      signalPassFailure();
-  }
-};
-
-
-class NNSimpleFuseAddReluRewriter
-      : public OpRewritePattern<nnsimple::ReluOp> {
-  public:
-    using OpRewritePattern<nnsimple::ReluOp>::OpRewritePattern;
-    LogicalResult matchAndRewrite(nnsimple::ReluOp reluOp,
-                                  PatternRewriter &rewriter) const final {
-      if (!reluOp.getResult().hasOneUse())
-        return failure();
-      auto addOp = dyn_cast<AddOp>(*reluOp.getOperand().getDefiningOp());
-      if (!addOp)
-        return failure();
-      rewriter.setInsertionPoint(reluOp);
-      auto fusedOp = FusedAddReluOp::create(rewriter, reluOp.getLoc(),
-                                            reluOp.getResult().getType(),
-                                            addOp.getLhs(), addOp.getRhs());
-      rewriter.replaceOp(reluOp, fusedOp.getResult());
-      rewriter.eraseOp(addOp);
-      return success();
-    }
-  };
 
 class NNSimpleFuseAddRelu
     : public impl::NNSimpleFuseAddReluBase<NNSimpleFuseAddRelu> {
 public:
   using impl::NNSimpleFuseAddReluBase<
       NNSimpleFuseAddRelu>::NNSimpleFuseAddReluBase;
-  
+
   void runOnOperation() final {
     func::FuncOp func = getOperation();
     RewritePatternSet patterns(&getContext());

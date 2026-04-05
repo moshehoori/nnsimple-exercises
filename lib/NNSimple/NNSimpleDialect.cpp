@@ -26,3 +26,11 @@ void NNSimpleDialect::initialize() {
       >();
   registerTypes();
 }
+
+Operation *NNSimpleDialect::materializeConstant(OpBuilder &builder,
+                                                Attribute value, Type type,
+                                                Location loc) {
+  if (auto elemAttr = llvm::dyn_cast<ElementsAttr>(value))
+    return ConstOp::create(builder, loc, type, elemAttr);
+  return nullptr;
+}
