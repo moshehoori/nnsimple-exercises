@@ -12,6 +12,7 @@
 include "NNSimple/NNSimpleTypes.td"
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
+include "mlir/IR/PatternBase.td"
 
 def NNSimple_AddOp : NNSimple_Op<"add", [Pure, Commutative]> {
     let summary = "Add two tensors element-wise.";
@@ -59,6 +60,7 @@ def NNSimple_ReluOp : NNSimple_Op<"relu", [Pure]> {
     let assemblyFormat = [{
         $input attr-dict `:` type($input) `->` type($output)
     }];
+    let hasCanonicalizer = 1;
 }
 
 def NNSimple_ConstOp : NNSimple_Op<"const", [Pure, ConstantLike]> {
@@ -93,5 +95,9 @@ def NNSimple_FusedAddReluOp : NNSimple_Op<"fused_add_relu", [Pure, Commutative]>
     }];
 }
 
+// Relu(Relu(x)) -> Relu(x)
+def ReluReluElimination : Pat<
+  (NNSimple_ReluOp (NNSimple_ReluOp $input)),
+  (NNSimple_ReluOp $input)>;
 
 #endif // NNSIMPLE_OPS

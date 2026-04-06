@@ -10,6 +10,7 @@ add_mlir_dialect_library(MLIRNNSimple
         DEPENDS
         MLIRNNSimpleOpsIncGen
         MLIRNNSimplePassesIncGen
+        MLIRNNSimpleCanonicalizationIncGen
 
         LINK_LIBS PUBLIC
         MLIRIR

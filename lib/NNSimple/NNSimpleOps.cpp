@@ -97,5 +97,12 @@ void AddOp::getCanonicalizationPatterns(RewritePatternSet &results,
   results.add<AddZeroElimination>(context);
 }
 
+#include "NNSimple/NNSimpleCanonicalization.inc"
+
+void ReluOp::getCanonicalizationPatterns(RewritePatternSet &results,
+                                         MLIRContext *context) {
+  results.add<ReluReluElimination>(context);
+}
+
 #define GET_OP_CLASSES
 #include "NNSimple/NNSimpleOps.cpp.inc"
