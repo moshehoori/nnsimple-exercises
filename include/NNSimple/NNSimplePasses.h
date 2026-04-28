@@ -20,6 +20,9 @@ namespace nnsimple {
 
 #define GEN_PASS_REGISTRATION
 #include "NNSimple/NNSimplePasses.h.inc"
+
+void registerNNSimplePipeline();
+
 } // namespace nnsimple
 } // namespace mlir
 

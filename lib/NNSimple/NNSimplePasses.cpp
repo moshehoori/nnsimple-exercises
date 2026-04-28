@@ -9,6 +9,7 @@
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/PatternMatch.h"
+#include "mlir/Pass/PassManager.h"
 #include "mlir/Rewrite/FrozenRewritePatternSet.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
@@ -55,6 +56,23 @@ public:
       signalPassFailure();
   }
 };
-
 } // namespace
+
+struct NNSimplePipelineOptions
+    : public PassPipelineOptions<NNSimplePipelineOptions> {
+  Option<bool> enableFuseAddRelu{*this, "enable-fuse-add-relu",
+                                 llvm::cl::desc("Enable Add+Relu fusion"),
+                                 llvm::cl::init(true)};
+};
+
+void registerNNSimplePipeline() {
+  PassPipelineRegistration<NNSimplePipelineOptions>(
+      "nnsimple-pipeline", "Pipeline that runs all NNSimple passes in sequence",
+      [](OpPassManager &pm, const NNSimplePipelineOptions &options) {
+        if (options.enableFuseAddRelu)
+          pm.addPass(createNNSimpleFuseAddRelu());
+        pm.addPass(createNNSimpleLowerToLinalg());
+      });
+}
+
 } // namespace mlir::nnsimple

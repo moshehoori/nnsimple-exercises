@@ -1,5 +1,7 @@
 set(LIBS
     MLIRArithDialect
+    MLIRLinalgDialect
+    MLIRTensorDialect
     MLIROptLib
     MLIRRegisterAllDialects
     MLIRRegisterAllPasses

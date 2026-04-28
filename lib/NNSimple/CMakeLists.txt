@@ -3,6 +3,7 @@ add_mlir_dialect_library(MLIRNNSimple
         NNSimpleDialect.cpp
         NNSimpleOps.cpp
         NNSimplePasses.cpp
+        NNSimpleLinalgLowering.cpp
 
         ADDITIONAL_HEADER_DIRS
         ${PROJECT_SOURCE_DIR}/include/NNSimple
@@ -16,4 +17,9 @@ add_mlir_dialect_library(MLIRNNSimple
         MLIRIR
         MLIRInferTypeOpInterface
         MLIRFuncDialect
+        MLIRArithDialect
+        MLIRLinalgDialect
+        MLIRTensorDialect
+        MLIRTransformUtils
+        MLIRFuncTransforms
         )

@@ -8,6 +8,8 @@
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/Linalg/IR/Linalg.h"
+#include "mlir/Dialect/Tensor/IR/Tensor.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/InitAllDialects.h"
 #include "mlir/InitAllPasses.h"
@@ -20,11 +22,13 @@
 int main(int argc, char **argv) {
   mlir::registerAllPasses();
   mlir::nnsimple::registerPasses();
-  // TODO: Register nnsimple passes here.
+  mlir::nnsimple::registerNNSimplePipeline();
+
 
   mlir::DialectRegistry registry;
-  registry.insert<mlir::nnsimple::NNSimpleDialect,
-                  mlir::arith::ArithDialect, mlir::func::FuncDialect>();
+  registry.insert<mlir::nnsimple::NNSimpleDialect, mlir::arith::ArithDialect,
+                  mlir::func::FuncDialect, mlir::linalg::LinalgDialect,
+                  mlir::tensor::TensorDialect>();
   // Add the following to include *all* MLIR Core dialects, or selectively
   // include what you need like above. You only need to register dialects that
   // will be *parsed* by the tool, not the one generated

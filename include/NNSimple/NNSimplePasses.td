@@ -24,4 +24,19 @@ def NNSimpleFuseAddRelu: Pass<"nnsimple-fuse-add-relu", "::mlir::func::FuncOp"> 
   }];
 }
 
+def NNSimpleLowerToLinalg : Pass<"nnsimple-lower-to-linalg", "::mlir::ModuleOp"> {
+  let summary = "Lower NNSimple dialect to Linalg on standard tensors.";
+  let description = [{
+    Converts nnsimple.tensor types to standard ranked tensor types (dropping
+    the layout) and lowers NNSimple ops to linalg.generic + arith operations.
+
+    !nnsimple.tensor<f32, [4, 4], NHWC> -> tensor<4x4xf32>
+  }];
+  let dependentDialects = [
+    "::mlir::arith::ArithDialect",
+    "::mlir::linalg::LinalgDialect",
+    "::mlir::tensor::TensorDialect"
+  ];
+}
+
 #endif // NNSIMPLE_PASS
