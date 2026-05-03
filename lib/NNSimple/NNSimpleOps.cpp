@@ -32,6 +32,18 @@ LogicalResult ConstOp::verify() {
 
 OpFoldResult ConstOp::fold(FoldAdaptor adaptor) { return getValue(); }
 
+// Pre-filled SubOp::verify (F-01 solved) so Track D can focus on lowering.
+LogicalResult SubOp::verify() {
+  auto lhsType = getLhs().getType();
+  auto rhsType = getRhs().getType();
+  auto resultType = getResult().getType();
+  if (lhsType != rhsType)
+    return emitOpError("operand types don't match");
+  if (lhsType != resultType)
+    return emitOpError("operand type doesn't match result type");
+  return success();
+}
+
 LogicalResult AddOp::verify() {
   auto lhsType = getLhs().getType();
   auto rhsType = getRhs().getType();

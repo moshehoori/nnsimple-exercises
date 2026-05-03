@@ -47,6 +47,17 @@ def NNSimple_MulOp : NNSimple_Op<"mul", [Pure, Commutative]> {
     }];
 }
 
+// Pre-filled (F-01 solved) so Track D can focus on lowering.
+def NNSimple_SubOp : NNSimple_Op<"sub", [Pure]> {
+    let summary = "Subtract two tensors element-wise.";
+    let arguments = (ins NNSimple_TensorType:$lhs, NNSimple_TensorType:$rhs);
+    let results = (outs NNSimple_TensorType:$result);
+    let assemblyFormat = [{
+        $lhs `,` $rhs attr-dict `:` `(` type($lhs) `,` type($rhs) `)` `->` type($result)
+    }];
+    let hasVerifier = 1;
+}
+
 def NNSimple_ReluOp : NNSimple_Op<"relu", [Pure]> {
     let summary = "Apply the ReLU activation function element-wise.";
     let description = [{

@@ -75,6 +75,22 @@ struct AddOpLowering : public OpConversionPattern<AddOp> {
   }
 };
 
+// ============================================================================
+// EXERCISE D-01: Add SubOpLowering here, mirroring AddOpLowering above.
+// Use linalg::SubOp instead of linalg::AddOp. Don't forget to register it
+// in the patterns.add<...>() call at the bottom of this file.
+// See EXERCISE.md at the repo root.
+// ============================================================================
+// struct SubOpLowering : public OpConversionPattern<SubOp> {
+//   using OpConversionPattern::OpConversionPattern;
+//   LogicalResult
+//   matchAndRewrite(SubOp op, OpAdaptor adaptor,
+//                   ConversionPatternRewriter &rewriter) const final {
+//     // TODO
+//     return failure();
+//   }
+// };
+
 // nnsimple.mul -> linalg.mul
 struct MulOpLowering : public OpConversionPattern<MulOp> {
   using OpConversionPattern::OpConversionPattern;
