@@ -97,6 +97,23 @@ void AddOp::getCanonicalizationPatterns(RewritePatternSet &results,
   results.add<AddZeroElimination>(context);
 }
 
+// ============================================================================
+// EXERCISE A-01: Implement MatMulOp::verify here.
+//
+// Diagnostics (match these strings — the tests check for them):
+//   - "operands must be rank-2"
+//   - "inner dimensions must match"
+//   - "result shape must be [lhs.shape[0], rhs.shape[1]]"
+//
+// To inspect shapes:
+//   auto lhsType = llvm::cast<nnsimple::TensorType>(getLhs().getType());
+//   auto lhsShape = lhsType.getShape();   // ArrayRef<int64_t>
+// ============================================================================
+// LogicalResult MatMulOp::verify() {
+//   // TODO
+//   return success();
+// }
+
 #include "NNSimple/NNSimpleCanonicalization.inc"
 
 void ReluOp::getCanonicalizationPatterns(RewritePatternSet &results,

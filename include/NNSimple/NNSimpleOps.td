@@ -80,6 +80,29 @@ def NNSimple_ConstOp : NNSimple_Op<"const", [Pure, ConstantLike]> {
     let hasFolder = 1;
 }
 
+// ============================================================================
+// EXERCISE A-01: Add the `nnsimple.matmul` op here, with a shape-compatibility
+// verifier.
+//
+// The op takes two rank-2 tensors and produces a rank-2 tensor:
+//   matmul(%a: [M, K], %b: [K, N]) -> [M, N]
+//
+// Verifier must emit:
+//   - "operands must be rank-2"   when any operand shape has len != 2
+//   - "inner dimensions must match"  when lhs.shape[1] != rhs.shape[0]
+//   - "result shape must be [lhs.shape[0], rhs.shape[1]]"  on result mismatch
+//
+// Mirror NNSimple_AddOp (lines 17-34) for the op skeleton; implement
+// MatMulOp::verify in lib/NNSimple/NNSimpleOps.cpp — cast operand types to
+// `nnsimple::TensorType` and call `.getShape()` to inspect dimensions.
+//
+// See EXERCISE.md at the repo root.
+// ============================================================================
+// def NNSimple_MatMulOp : NNSimple_Op<"matmul", [Pure]> {
+//     let summary = "Matrix multiplication.";
+//     // TODO: arguments, results, assemblyFormat, hasVerifier
+// }
+
 def NNSimple_FusedAddReluOp : NNSimple_Op<"fused_add_relu", [Pure, Commutative]> {
     let summary = "Perform fused addition followed by ReLU activation.";
     let description = [{
