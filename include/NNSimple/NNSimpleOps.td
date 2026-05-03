@@ -47,6 +47,23 @@ def NNSimple_MulOp : NNSimple_Op<"mul", [Pure, Commutative]> {
     }];
 }
 
+// ============================================================================
+// EXERCISE F-01: Add the `nnsimple.sub` op here.
+//
+// Mirror NNSimple_AddOp above (lines 17-34), but:
+//   - op mnemonic is "sub"
+//   - NOT commutative (drop the Commutative trait; keep Pure)
+//   - no folder or canonicalizer needed (drop hasFolder/hasCanonicalizer)
+//   - keep hasVerifier = 1 — you'll implement SubOp::verify in
+//     lib/NNSimple/NNSimpleOps.cpp
+//
+// See EXERCISE.md at the repo root for details.
+// ============================================================================
+// def NNSimple_SubOp : NNSimple_Op<"sub", [Pure]> {
+//     let summary = "Subtract two tensors element-wise.";
+//     // TODO: arguments, results, assemblyFormat, hasVerifier
+// }
+
 def NNSimple_ReluOp : NNSimple_Op<"relu", [Pure]> {
     let summary = "Apply the ReLU activation function element-wise.";
     let description = [{

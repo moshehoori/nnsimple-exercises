@@ -46,6 +46,19 @@ LogicalResult AddOp::verify() {
   return success();
 }
 
+// ============================================================================
+// EXERCISE F-01: Implement SubOp::verify here.
+//
+// Mirror AddOp::verify below. Emit the diagnostics:
+//   - "operand types don't match"         when lhs type != rhs type
+//   - "operand type doesn't match result type"  when lhs type != result type
+// (The negative tests in test/NNSimple/sub-ops.mlir match these strings.)
+// ============================================================================
+// LogicalResult SubOp::verify() {
+//   // TODO
+//   return success();
+// }
+
 // AddOp folder: both operands are constant → fold to a new constant.
 OpFoldResult AddOp::fold(FoldAdaptor adaptor) {
   auto lhsAttr = llvm::dyn_cast_or_null<DenseElementsAttr>(adaptor.getLhs());
