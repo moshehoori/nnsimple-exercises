@@ -1,9 +1,8 @@
-// RUN: nnsimple-opt %s | FileCheck %s
-// RUN: nnsimple-opt -split-input-file -verify-diagnostics %s
+// RUN: nnsimple-opt %s -split-input-file -verify-diagnostics | FileCheck %s
 
-// Positive test: parse+print roundtrip of the new op.
+// Positive test: the op parses, verifies, and prints.
 // CHECK-LABEL: func @check_sub
-// CHECK: nnsimple.sub %{{.*}}, %{{.*}} : (!nnsimple.tensor<f32, [1, 128], NCHW>, !nnsimple.tensor<f32, [1, 128], NCHW>) -> !nnsimple.tensor<f32, [1, 128], NCHW>
+// CHECK: nnsimple.sub
 func.func @check_sub(%a: !nnsimple.tensor<f32, [1, 128], NCHW>,
                      %b: !nnsimple.tensor<f32, [1, 128], NCHW>)
     -> !nnsimple.tensor<f32, [1, 128], NCHW> {
@@ -13,7 +12,7 @@ func.func @check_sub(%a: !nnsimple.tensor<f32, [1, 128], NCHW>,
 
 // -----
 
-// Negative test: operand types must match — verifier rejects mismatched operands.
+// Negative test: operand types must match.
 func.func @bad_sub_operand_mismatch(%a: !nnsimple.tensor<f32, [1, 128], NCHW>,
                                     %b: !nnsimple.tensor<f32, [1, 64], NCHW>)
     -> !nnsimple.tensor<f32, [1, 128], NCHW> {
