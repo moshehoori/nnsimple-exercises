@@ -29,20 +29,34 @@ git checkout starter/F-01
 # Read the task
 cat EXERCISE.md
 
-# See the failing test
-cd build && ninja check-nnsimple  # should fail on sub-ops.mlir
+# See the failing test (look for the exercise's own test failing)
+cd build && ninja check-nnsimple
 
-# Edit files. When done:
-ninja check-nnsimple              # should pass
+# Edit files. When done, the exercise's test goes green:
+ninja check-nnsimple
 
 # Optional: save your work on a personal branch before moving on
 git checkout -b $USER/F-01
 git commit -am "F-01 done"
 ```
 
-Run a single exercise's test only:
+Run a single exercise's test only (faster feedback loop):
 ```bash
-llvm-lit -v ../test/NNSimple/ --filter=sub-
+llvm-lit -v ../test/NNSimple/sub-ops.mlir
+```
+
+### A note on baseline failures
+
+`ninja check-nnsimple` has **7 pre-existing failures** (same on `master`, unrelated to exercises) caused by API drift between upstream nnsimple and the pinned MLIR build:
+- `CAPI/nnsimple-capi-test.c` — CAPI binary not built in this configuration
+- `NNSimple/add-canonicalize.mlir`, `basic_ops.mlir`, `dummy.mlir`, `nnsimple-fuse-test.mlir` — upstream printer drops `!nnsimple.tensor` prefix inside `(...)`
+- `NNSimple/nnsimple-plugin.mlir`, `nnsimple-pass-plugin.mlir` — plugin only builds with in-tree MLIR
+
+Your goal for each exercise is to turn **your exercise's test** green (e.g. `sub-ops.mlir` for F-01). Ignore the 7 baseline reds. You can filter to just your test:
+```bash
+llvm-lit -v ../test/NNSimple/sub-ops.mlir   # F-01
+llvm-lit -v ../test/NNSimple/neg-canonicalize.mlir   # F-02
+# ... etc.
 ```
 
 ## Exercises
