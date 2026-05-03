@@ -97,6 +97,47 @@ void AddOp::getCanonicalizationPatterns(RewritePatternSet &results,
   results.add<AddZeroElimination>(context);
 }
 
+// ============================================================================
+// EXERCISE B-02: Add two C++ canonicalization patterns for MulOp:
+//
+//   1) MulOneElimination:   mul(x, 1) -> x
+//   2) MulZeroElimination:  mul(x, 0) -> 0
+//
+// Because MulOp has the Commutative trait, the canonicalizer sorts constants
+// to the rhs — you only need to check the rhs.
+//
+// Mirror AddZeroElimination above. For MulZeroElimination, replace the op
+// with a fresh nnsimple.const of a zero-splat (same type as the original
+// result). Use `rewriter.replaceOpWithNewOp<ConstOp>(op, type, zeroAttr)`.
+//
+// Register both patterns in MulOp::getCanonicalizationPatterns (stub below).
+//
+// Don't forget to add `let hasCanonicalizer = 1;` inside NNSimple_MulOp
+// in NNSimpleOps.td.
+// ============================================================================
+// struct MulOneElimination : public OpRewritePattern<MulOp> {
+//   using OpRewritePattern::OpRewritePattern;
+//   LogicalResult matchAndRewrite(MulOp op,
+//                                 PatternRewriter &rewriter) const override {
+//     // TODO
+//     return failure();
+//   }
+// };
+//
+// struct MulZeroElimination : public OpRewritePattern<MulOp> {
+//   using OpRewritePattern::OpRewritePattern;
+//   LogicalResult matchAndRewrite(MulOp op,
+//                                 PatternRewriter &rewriter) const override {
+//     // TODO
+//     return failure();
+//   }
+// };
+//
+// void MulOp::getCanonicalizationPatterns(RewritePatternSet &results,
+//                                         MLIRContext *context) {
+//   results.add<MulOneElimination, MulZeroElimination>(context);
+// }
+
 #include "NNSimple/NNSimpleCanonicalization.inc"
 
 void ReluOp::getCanonicalizationPatterns(RewritePatternSet &results,

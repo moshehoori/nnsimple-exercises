@@ -45,6 +45,9 @@ def NNSimple_MulOp : NNSimple_Op<"mul", [Pure, Commutative]> {
     let assemblyFormat = [{
         $lhs `,` $rhs attr-dict `:` `(` type($lhs) `,` type($rhs) `)` `->` type($result)
     }];
+
+    // EXERCISE B-02: uncomment to register your canonicalization patterns.
+    // let hasCanonicalizer = 1;
 }
 
 def NNSimple_ReluOp : NNSimple_Op<"relu", [Pure]> {
