@@ -66,6 +66,29 @@ def NNSimple_TensorType : NNSimple_Type<"Tensor", "tensor"> {
     let assemblyFormat = "`<` $elementType `,` `[` $shape `]` `,` $layout `>`";
 }
 
+// ============================================================================
+// EXERCISE A-02: Define a `!nnsimple.quantized` type.
+//
+// Parameters:
+//   - elementType: FloatType (e.g. f32)
+//   - shape:       ArrayRef<int64_t>
+//   - scale:       double-like (use `"double"` as the C++ type)
+//   - zeroPoint:   int64_t
+//
+// Example assembly syntax (your assemblyFormat must accept this):
+//   !nnsimple.quantized<f32, [4], 0.1, 128>
+//
+// Mirror NNSimple_TensorType (just above) for structure. Use TypeParameter
+// for scalar params, ArrayRefParameter for the shape.
+//
+// See EXERCISE.md at the repo root.
+// ============================================================================
+// def NNSimple_QuantizedType : NNSimple_Type<"Quantized", "quantized"> {
+//     let summary = "Quantized tensor with scale and zero-point.";
+//     // TODO: parameters and assemblyFormat — see EXERCISE.md for why scale
+//     // needs to be FloatAttr, not plain `double`.
+// }
+
 def NNSimple_CustomType : NNSimple_Type<"Custom", "custom"> {
     let summary = "NNSimple custom type";
     let description = "Custom type in nnsimple dialect";
