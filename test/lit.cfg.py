@@ -54,10 +54,18 @@ llvm_config.with_environment("PATH", config.llvm_tools_dir, append_path=True)
 tool_dirs = [config.nnsimple_tools_dir, config.llvm_tools_dir]
 tools = [
     "mlir-opt",
+    "mlir-runner",
     "nnsimple-capi-test",
     "nnsimple-opt",
     "nnsimple-translate",
 ]
+
+# Expose the LLVM/MLIR build's lib dir so integration tests can load
+# mlir_runner_utils.so and mlir_c_runner_utils.so for JIT runs.
+config.substitutions.append(
+    ("%mlir_runner_libs",
+     "{0}/libmlir_runner_utils{1},{0}/libmlir_c_runner_utils{1}".format(
+         config.llvm_lib_dir, config.llvm_shlib_ext)))
 
 llvm_config.add_tool_substitutions(tools, tool_dirs)
 
