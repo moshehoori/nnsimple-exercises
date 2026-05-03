@@ -100,4 +100,28 @@ def ReluReluElimination : Pat<
   (NNSimple_ReluOp (NNSimple_ReluOp $input)),
   (NNSimple_ReluOp $input)>;
 
+// ============================================================================
+// EXERCISE F-02: Add the `nnsimple.neg` op and a DRR canonicalization.
+//
+// 1) Define NNSimple_NegOp below. Single operand, single result, Pure.
+//    Mirror NNSimple_ReluOp (lines 50-64) — same shape, just a different
+//    mnemonic and summary. Keep `hasCanonicalizer = 1`.
+//
+// 2) Add a DRR Pat below it: neg(neg(x)) -> x. Mirror ReluReluElimination
+//    above. Note the RHS is just `$input` (not wrapped in an op).
+//
+// 3) In lib/NNSimple/NNSimpleOps.cpp, register the generated pattern via
+//    NegOp::getCanonicalizationPatterns. Mirror the ReluOp hook.
+//
+// See EXERCISE.md at the repo root.
+// ============================================================================
+// def NNSimple_NegOp : NNSimple_Op<"neg", [Pure]> {
+//     let summary = "Element-wise negation.";
+//     // TODO: arguments, results, assemblyFormat, hasCanonicalizer
+// }
+//
+// def NegNegElimination : Pat<
+//   (NNSimple_NegOp (NNSimple_NegOp $input)),
+//   (replaceWithValue $input)>;
+
 #endif // NNSIMPLE_OPS

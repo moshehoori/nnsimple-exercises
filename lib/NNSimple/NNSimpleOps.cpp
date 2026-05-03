@@ -104,5 +104,14 @@ void ReluOp::getCanonicalizationPatterns(RewritePatternSet &results,
   results.add<ReluReluElimination>(context);
 }
 
+// ============================================================================
+// EXERCISE F-02: Register the generated NegNegElimination pattern here.
+// Mirror ReluOp::getCanonicalizationPatterns above.
+// ============================================================================
+// void NegOp::getCanonicalizationPatterns(RewritePatternSet &results,
+//                                         MLIRContext *context) {
+//   results.add<NegNegElimination>(context);
+// }
+
 #define GET_OP_CLASSES
 #include "NNSimple/NNSimpleOps.cpp.inc"
