@@ -45,6 +45,10 @@ def NNSimple_MulOp : NNSimple_Op<"mul", [Pure, Commutative]> {
     let assemblyFormat = [{
         $lhs `,` $rhs attr-dict `:` `(` type($lhs) `,` type($rhs) `)` `->` type($result)
     }];
+
+    // EXERCISE B-01: uncomment the line below and implement MulOp::fold in
+    // lib/NNSimple/NNSimpleOps.cpp. See EXERCISE.md at the repo root.
+    // let hasFolder = 1;
 }
 
 def NNSimple_ReluOp : NNSimple_Op<"relu", [Pure]> {

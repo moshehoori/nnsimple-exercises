@@ -46,6 +46,18 @@ LogicalResult AddOp::verify() {
   return success();
 }
 
+// ============================================================================
+// EXERCISE B-01: Implement MulOp::fold here.
+//
+// Mirror AddOp::fold below. Use APFloat::multiply (rmNearestTiesToEven) instead
+// of .add. The fold should only fire when BOTH operands are dense constants of
+// the same type.
+// ============================================================================
+// OpFoldResult MulOp::fold(FoldAdaptor adaptor) {
+//   // TODO
+//   return {};
+// }
+
 // AddOp folder: both operands are constant → fold to a new constant.
 OpFoldResult AddOp::fold(FoldAdaptor adaptor) {
   auto lhsAttr = llvm::dyn_cast_or_null<DenseElementsAttr>(adaptor.getLhs());
