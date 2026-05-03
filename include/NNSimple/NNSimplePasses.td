@@ -24,6 +24,11 @@ def NNSimpleFuseAddRelu: Pass<"nnsimple-fuse-add-relu", "::mlir::func::FuncOp"> 
   }];
 }
 
+// EXERCISE C-02: pass is declared; implement it in lib/NNSimple/NNSimpleDCE.cpp.
+def NNSimpleDCE : Pass<"nnsimple-dce", "::mlir::func::FuncOp"> {
+  let summary = "Erase dead Pure ops in the nnsimple dialect.";
+}
+
 def NNSimpleLowerToLinalg : Pass<"nnsimple-lower-to-linalg", "::mlir::ModuleOp"> {
   let summary = "Lower NNSimple dialect to Linalg on standard tensors.";
   let description = [{

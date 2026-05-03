@@ -4,6 +4,7 @@ add_mlir_dialect_library(MLIRNNSimple
         NNSimpleOps.cpp
         NNSimplePasses.cpp
         NNSimpleLinalgLowering.cpp
+        NNSimpleDCE.cpp
 
         ADDITIONAL_HEADER_DIRS
         ${PROJECT_SOURCE_DIR}/include/NNSimple
