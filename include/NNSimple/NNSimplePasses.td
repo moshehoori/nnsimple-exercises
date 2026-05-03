@@ -24,6 +24,12 @@ def NNSimpleFuseAddRelu: Pass<"nnsimple-fuse-add-relu", "::mlir::func::FuncOp"> 
   }];
 }
 
+// EXERCISE C-01: pass is already declared; you implement it in
+// lib/NNSimple/NNSimpleFuseMulAdd.cpp. (See EXERCISE.md.)
+def NNSimpleFuseMulAdd : Pass<"nnsimple-fuse-mul-add", "::mlir::func::FuncOp"> {
+  let summary = "Fuse add(mul(a, b), c) into a single fused_mul_add op.";
+}
+
 def NNSimpleLowerToLinalg : Pass<"nnsimple-lower-to-linalg", "::mlir::ModuleOp"> {
   let summary = "Lower NNSimple dialect to Linalg on standard tensors.";
   let description = [{

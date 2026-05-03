@@ -100,4 +100,17 @@ def ReluReluElimination : Pat<
   (NNSimple_ReluOp (NNSimple_ReluOp $input)),
   (NNSimple_ReluOp $input)>;
 
+// ============================================================================
+// EXERCISE C-01: Define the result op of the fusion pass below.
+//
+// FusedMulAddOp represents add(mul(a,b), c) in one op. Three operands (a, b, c),
+// one result. Pure. Not commutative (position of c matters semantically).
+// Mirror NNSimple_FusedAddReluOp (just above) — add a third operand.
+// See EXERCISE.md at the repo root.
+// ============================================================================
+// def NNSimple_FusedMulAddOp : NNSimple_Op<"fused_mul_add", [Pure]> {
+//     let summary = "Fused mul-then-add: (a*b) + c.";
+//     // TODO: arguments (three NNSimple_TensorType), results, assemblyFormat
+// }
+
 #endif // NNSIMPLE_OPS
