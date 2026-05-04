@@ -26,6 +26,8 @@ When either operand is non-constant, the fold must NOT fire.
 | `include/NNSimple/NNSimpleOps.td` | Uncomment `let hasFolder = 1;` inside `NNSimple_MulOp`. |
 | `lib/NNSimple/NNSimpleOps.cpp` | Implement `MulOp::fold`. Stub shown above `AddOp::fold`. |
 
+The test for this exercise (`test/NNSimple/mul-fold.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 ## Hints
 
 - `AddOp::fold` a few lines below your stub is the exact template. Only difference: use `APFloat::multiply(..., APFloat::rmNearestTiesToEven)` instead of `.add(...)`.
