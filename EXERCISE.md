@@ -2,7 +2,7 @@
 
 **Concepts**: TableGen-declared passes, `OpRewritePattern`, greedy pattern rewrite driver, multi-operand pattern matching.
 
-**Time**: ~3h.
+**Time**: ~1.5h.
 
 ## Task
 
@@ -26,46 +26,36 @@ Write an optimization pass that fuses `add(mul(a, b), c)` into a single `fused_m
 | `include/NNSimple/NNSimplePasses.td` | Uncomment `NNSimpleFuseMulAdd`. |
 | `lib/NNSimple/NNSimpleFuseMulAdd.cpp` | Implement the pattern and the pass body. Starter skeleton provided. |
 
+The test for this exercise (`test/NNSimple/fuse-mul-add.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 The pass is auto-registered with `nnsimple-opt` once declared in the `.td` — no changes needed to `nnsimple-opt.cpp`.
 
 ## Hints
 
-- **The op**: three-operand equivalent of `NNSimple_FusedAddReluOp` (lines ~83-96 of `NNSimpleOps.td`). Use `(ins NNSimple_TensorType:$a, NNSimple_TensorType:$b, NNSimple_TensorType:$c)`. Assembly format extends naturally:
-  ```tablegen
-  let assemblyFormat = [{
-      $a `,` $b `,` $c attr-dict `:` `(` type($a) `,` type($b) `,` type($c) `)` `->` type($result)
-  }];
-  ```
-- **The pattern**: mirror `NNSimpleFuseAddReluRewriter` in `lib/NNSimple/NNSimplePasses.cpp` lines 24-42. Match `AddOp`, check that either operand comes from a single-use `MulOp`:
-  ```cpp
-  class FuseMulAddRewriter : public OpRewritePattern<AddOp> {
-    LogicalResult matchAndRewrite(AddOp addOp, PatternRewriter &rewriter) const override {
-      // Try lhs-is-mul first, then rhs-is-mul.
-      for (auto [maybeMul, other] : {std::pair{addOp.getLhs(), addOp.getRhs()},
-                                     std::pair{addOp.getRhs(), addOp.getLhs()}}) {
-        auto mulOp = maybeMul.getDefiningOp<MulOp>();
-        if (!mulOp || !mulOp->hasOneUse()) continue;
-        auto fused = FusedMulAddOp::create(rewriter, addOp.getLoc(), addOp.getResult().getType(),
-                                            mulOp.getLhs(), mulOp.getRhs(), other);
-        rewriter.replaceOp(addOp, fused.getResult());
-        rewriter.eraseOp(mulOp);
-        return success();
-      }
-      return failure();
-    }
-  };
-  ```
+- **The op**: three-operand equivalent of `NNSimple_FusedAddReluOp` (lines ~83-96 of `NNSimpleOps.td`). The existing op has two operands — yours has three. The assembly format extends the same way.
+- **The pattern**: mirror `NNSimpleFuseAddReluRewriter` in `lib/NNSimple/NNSimplePasses.cpp` (lines 24-42). That one matches `ReluOp` and looks for an `AddOp` producing its input. Yours matches `AddOp` and looks for a single-use `MulOp` producing either operand.
+  - Use `Value::getDefiningOp<MulOp>()` to check the producing op.
+  - Use `op->hasOneUse()` for the safety check.
+  - Use `rewriter.replaceOp(addOp, fused.getResult())` + `rewriter.eraseOp(mulOp)` to swap in the new op.
+- **Commuted pattern**: remember `add(c, mul(a,b))` should also fuse — try each operand of the add.
 - **The pass body**: look at `NNSimpleFuseAddRelu::runOnOperation` (same file, lines 50-57). Build a `RewritePatternSet`, add your rewriter, call `applyPatternsGreedily(func, ...)`.
 
 ## Done when
 
+`test/NNSimple/fuse-mul-add.mlir` goes from red to green. It has a positive case (simple `(a*b)+c`) and a negative case (multi-use mul — must NOT fuse).
+
 ```bash
-cd build && ninja check-nnsimple
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/fuse-mul-add.mlir   # should PASS
 ```
 
-passes. `test/NNSimple/fuse-mul-add.mlir` has a positive case (simple `(a*b)+c`) and a negative case (multi-use mul — must NOT fuse).
+Or manually:
+```bash
+./bin/nnsimple-opt ../test/NNSimple/fuse-mul-add.mlir -nnsimple-fuse-mul-add \
+    | /path/to/llvm-project/build/bin/FileCheck ../test/NNSimple/fuse-mul-add.mlir
+```
 
 ## Stretch
 
-- Fuse across commuted pattern: `add(c, mul(a, b))` (the `for` loop above already handles this).
 - Add a `negate_c` boolean pass option: when set, treat the pass as fusing `add(mul(a,b), neg(c))` into a new `fused_mul_sub` op. Demonstrates pass options (see the `enable-fuse-add-relu` flag in `NNSimplePasses.cpp:61-66` for the pattern).
+- Also handle `sub(mul(a, b), c) → fused_mul_sub(a, b, c)` once F-01's `sub` op is in place.
