@@ -23,6 +23,8 @@ Add an element-wise negation op, then write a declarative rewrite rule that coll
 | `include/NNSimple/NNSimpleOps.td` | Define `NNSimple_NegOp` and a `Pat<>` named `NegNegElimination`. Stubs show where. |
 | `lib/NNSimple/NNSimpleOps.cpp` | Register the generated pattern with `NegOp::getCanonicalizationPatterns`. Stub shows where. |
 
+The test for this exercise (`test/NNSimple/neg-canonicalize.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 ## Hints
 
 - Look at `NNSimple_ReluOp` in `NNSimpleOps.td` (lines ~50-64) — your op is structurally identical: single operand, single result, Pure, `hasCanonicalizer = 1`.
@@ -38,15 +40,17 @@ Add an element-wise negation op, then write a declarative rewrite rule that coll
 
 ## Done when
 
+`test/NNSimple/neg-canonicalize.mlir` goes from red to green. It's a positive test (`neg(neg(x))` is gone after `-canonicalize`) and a sanity test (a single `neg` survives).
+
 ```bash
-cd build && ninja check-nnsimple
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/neg-canonicalize.mlir   # should PASS
 ```
 
-passes. The test file is `test/NNSimple/neg-canonicalize.mlir` — a positive test (`neg(neg(x))` is gone after `-canonicalize`) and a sanity test (a single `neg` survives).
-
-Single-file:
+Or manually:
 ```bash
-llvm-lit -v ../test/NNSimple/neg-canonicalize.mlir
+./bin/nnsimple-opt ../test/NNSimple/neg-canonicalize.mlir -canonicalize \
+    | /path/to/llvm-project/build/bin/FileCheck ../test/NNSimple/neg-canonicalize.mlir
 ```
 
 ## Stretch (optional)
