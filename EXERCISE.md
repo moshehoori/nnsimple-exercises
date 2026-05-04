@@ -25,6 +25,8 @@ It should be **Pure** (no side effects) but **not Commutative** (order matters: 
 | `include/NNSimple/NNSimpleOps.td` | Define `NNSimple_SubOp`. Stub comment shows where. |
 | `lib/NNSimple/NNSimpleOps.cpp` | Implement `SubOp::verify()`. Stub comment shows where. |
 
+The test for this exercise (`test/NNSimple/sub-ops.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 ## Hints
 
 - Look at `NNSimple_AddOp` in `NNSimpleOps.td` (lines ~17-34) — the new op is almost identical but drops the `Commutative` trait and drops `hasFolder`/`hasCanonicalizer`.
@@ -33,15 +35,17 @@ It should be **Pure** (no side effects) but **not Commutative** (order matters: 
 
 ## Done when
 
+`test/NNSimple/sub-ops.mlir` goes from red to green. It's one positive parse test and two negative tests (mismatched operand shapes, mismatched result shape) that exercise both verifier diagnostics.
+
 ```bash
-cd build && ninja check-nnsimple
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/sub-ops.mlir   # should PASS
 ```
 
-passes. The test file is `test/NNSimple/sub-ops.mlir` — it has one positive parse test and two negative tests (mismatched operand shapes, mismatched result shape) that exercise both verifier diagnostics.
-
-To run just this test:
+Or run it manually (useful if `llvm-lit` isn't on your PATH):
 ```bash
-llvm-lit -v ../test/NNSimple/sub-ops.mlir
+./bin/nnsimple-opt ../test/NNSimple/sub-ops.mlir -split-input-file -verify-diagnostics \
+    | /path/to/llvm-project/build/bin/FileCheck ../test/NNSimple/sub-ops.mlir
 ```
 
 ## Stretch (optional)
