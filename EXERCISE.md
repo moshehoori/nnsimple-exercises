@@ -30,6 +30,8 @@ Only 2D (no batch). The verifier must reject:
 | `include/NNSimple/NNSimpleOps.td` | Define `NNSimple_MatMulOp`. Stub comment shows where. |
 | `lib/NNSimple/NNSimpleOps.cpp` | Implement `MatMulOp::verify`. Stub comment shows where. |
 
+The test for this exercise (`test/NNSimple/matmul.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 ## Hints
 
 - Mirror `NNSimple_AddOp` (td lines 17-34) for the op skeleton. Two operands, one result, Pure, `hasVerifier = 1`. Not Commutative (matrix mul isn't). No folder, no canonicalizer.
