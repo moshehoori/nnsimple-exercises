@@ -10,7 +10,7 @@ Every learner works through all 10 exercises individually, roughly easiest → h
 
 **Ops & Type System**
 - [A-01 — `nnsimple.matmul` with shape-compatibility verifier](#a-01--nnsimplematmul-with-shape-compatibility-verifier)
-- [A-02 — `!nnsimple.quantized` type](#a-02--nnsimplequantized-type)
+- [A-02 — Quantization on `!nnsimple.tensor` + `nnsimple.quantize` op](#a-02--quantization-on-nnsimpletensor--nnsimplequantize-op)
 
 **Folders & Canonicalization**
 - [B-01 — Implement `MulOp::fold` for constant × constant](#b-01--implement-mulopfold-for-constant--constant)
@@ -53,6 +53,8 @@ It should be **Pure** (no side effects) but **not Commutative** (order matters: 
 | `include/NNSimple/NNSimpleOps.td` | Define `NNSimple_SubOp`. Stub comment shows where. |
 | `lib/NNSimple/NNSimpleOps.cpp` | Implement `SubOp::verify()`. Stub comment shows where. |
 
+The test for this exercise (`test/NNSimple/sub-ops.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 ### Hints
 
 - Look at `NNSimple_AddOp` in `NNSimpleOps.td` (lines ~17-34) — the new op is almost identical but drops the `Commutative` trait and drops `hasFolder`/`hasCanonicalizer`.
@@ -61,15 +63,17 @@ It should be **Pure** (no side effects) but **not Commutative** (order matters: 
 
 ### Done when
 
+`test/NNSimple/sub-ops.mlir` goes from red to green. It's one positive parse test and two negative tests (mismatched operand shapes, mismatched result shape) that exercise both verifier diagnostics.
+
 ```bash
-cd build && ninja check-nnsimple
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/sub-ops.mlir   # should PASS
 ```
 
-passes. The test file is `test/NNSimple/sub-ops.mlir` — it has one positive parse test and two negative tests (mismatched operand shapes, mismatched result shape) that exercise both verifier diagnostics.
-
-To run just this test:
+Or run it manually (useful if `llvm-lit` isn't on your PATH):
 ```bash
-llvm-lit -v ../test/NNSimple/sub-ops.mlir
+./bin/nnsimple-opt ../test/NNSimple/sub-ops.mlir -split-input-file -verify-diagnostics \
+    | /path/to/llvm-project/build/bin/FileCheck ../test/NNSimple/sub-ops.mlir
 ```
 
 ### Stretch (optional)
@@ -105,6 +109,8 @@ Add an element-wise negation op, then write a declarative rewrite rule that coll
 | `include/NNSimple/NNSimpleOps.td` | Define `NNSimple_NegOp` and a `Pat<>` named `NegNegElimination`. Stubs show where. |
 | `lib/NNSimple/NNSimpleOps.cpp` | Register the generated pattern with `NegOp::getCanonicalizationPatterns`. Stub shows where. |
 
+The test for this exercise (`test/NNSimple/neg-canonicalize.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 ### Hints
 
 - Look at `NNSimple_ReluOp` in `NNSimpleOps.td` (lines ~50-64) — your op is structurally identical: single operand, single result, Pure, `hasCanonicalizer = 1`.
@@ -120,15 +126,17 @@ Add an element-wise negation op, then write a declarative rewrite rule that coll
 
 ### Done when
 
+`test/NNSimple/neg-canonicalize.mlir` goes from red to green. It's a positive test (`neg(neg(x))` is gone after `-canonicalize`) and a sanity test (a single `neg` survives).
+
 ```bash
-cd build && ninja check-nnsimple
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/neg-canonicalize.mlir   # should PASS
 ```
 
-passes. The test file is `test/NNSimple/neg-canonicalize.mlir` — a positive test (`neg(neg(x))` is gone after `-canonicalize`) and a sanity test (a single `neg` survives).
-
-Single-file:
+Or manually:
 ```bash
-llvm-lit -v ../test/NNSimple/neg-canonicalize.mlir
+./bin/nnsimple-opt ../test/NNSimple/neg-canonicalize.mlir -canonicalize \
+    | /path/to/llvm-project/build/bin/FileCheck ../test/NNSimple/neg-canonicalize.mlir
 ```
 
 ### Stretch (optional)
@@ -171,6 +179,8 @@ Only 2D (no batch). The verifier must reject:
 | `include/NNSimple/NNSimpleOps.td` | Define `NNSimple_MatMulOp`. Stub comment shows where. |
 | `lib/NNSimple/NNSimpleOps.cpp` | Implement `MatMulOp::verify`. Stub comment shows where. |
 
+The test for this exercise (`test/NNSimple/matmul.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 ### Hints
 
 - Mirror `NNSimple_AddOp` (td lines 17-34) for the op skeleton. Two operands, one result, Pure, `hasVerifier = 1`. Not Commutative (matrix mul isn't). No folder, no canonicalizer.
@@ -184,11 +194,12 @@ Only 2D (no batch). The verifier must reject:
 
 ### Done when
 
-```bash
-cd build && ninja check-nnsimple
-```
+`test/NNSimple/matmul.mlir` goes from red to green — 1 positive, 3 negatives (rank, inner dim, result shape).
 
-passes. The test file is `test/NNSimple/matmul.mlir` — 1 positive, 3 negatives (rank, inner dim, result shape).
+```bash
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/matmul.mlir   # should PASS
+```
 
 ### Stretch
 
@@ -198,70 +209,121 @@ passes. The test file is `test/NNSimple/matmul.mlir` — 1 positive, 3 negatives
 
 ---
 
-## A-02 — `!nnsimple.quantized` type
+## A-02 — Quantization on `!nnsimple.tensor` + `nnsimple.quantize` op
 
-**Concepts**: custom types with parameters (TypeDef), declarative `assemblyFormat`.
+**Concepts**: extending an existing custom type with optional parameters, hand-written parse/print, verifier that reads type parameters.
 
-**Time**: ~1.5-2h.
+**Time**: ~3h.
 
 ### Task
 
-Add a new type representing a quantized tensor. Input syntax (what a user writes):
+Extend the existing `!nnsimple.tensor` type with **optional** `scale` and `zero_point` fields, so a tensor can be marked as quantized. Then add a `nnsimple.quantize` op that attaches quantization info to an unquantized tensor.
+
+Target syntax (both forms must coexist — the plain form still works for `add`/`mul`/... as before):
 
 ```mlir
-!nnsimple.quantized<f32, [4], 0.1, 128>
-!nnsimple.quantized<f32, [2, 3], 0.5, 0>
+// Plain (existing):
+!nnsimple.tensor<f32, [4, 4], NHWC>
+
+// Quantized (new):
+!nnsimple.tensor<f32, [4], NCHW, scale 0.1, zero_point 128>
+
+// The new op:
+%q = nnsimple.quantize %x
+    : !nnsimple.tensor<f32, [4], NCHW>
+   -> !nnsimple.tensor<f32, [4], NCHW, scale 0.1, zero_point 128>
 ```
 
-Printed form (after the op goes through `nnsimple-opt`) — floats get their type suffix:
+### What you'll build (3 parts)
 
-```mlir
-!nnsimple.quantized<f32, [4], 1.000000e-01 : f64, 128>
+#### Part 1 — Extend `!nnsimple.tensor` with optional params
+In `include/NNSimple/NNSimpleTypes.td`, add two `OptionalParameter` entries to the `NNSimple_TensorType` definition:
+```tablegen
+OptionalParameter<"::mlir::FloatAttr">:$scale,
+OptionalParameter<"::mlir::IntegerAttr">:$zeroPoint
+```
+Optional means existing tensors like `!nnsimple.tensor<f32, [4, 4], NHWC>` keep parsing with `scale`/`zeroPoint` as null.
+
+Also uncomment the `extraClassDeclaration` block that adds a `isQuantized()` helper. You'll use it from the op verifier.
+
+#### Part 2 — Hand-write parse/print
+The moment you add optional params, the existing declarative `assemblyFormat` won't handle the optional tail well. Replace it with `let hasCustomAssemblyFormat = 1;` in `.td` and implement `TensorType::parse` + `TensorType::print` in `lib/NNSimple/NNSimpleTypes.cpp`.
+
+Grammar:
+```
+<elementType , [ shape ] , layout-keyword ( , scale float-attr , zero_point int-attr )? >
 ```
 
-Parameters:
-- `elementType`: float type (e.g. `f32`)
-- `shape`: static dims, `ArrayRef<int64_t>`
-- `scale`: `mlir::FloatAttr` (see hints — plain C++ `double` doesn't work)
-- `zeroPoint`: C++ `int64_t`
+This is the most educational part of the exercise — you learn the actual C++ API that the `assemblyFormat` DSL compiles down to.
+
+#### Part 3 — Add `nnsimple.quantize` op
+In `include/NNSimple/NNSimpleOps.td`, uncomment `NNSimple_QuantizeOp`. It takes one `NNSimple_TensorType` input and produces one `NNSimple_TensorType` output; `Pure`; `hasVerifier = 1`.
+
+Then in `lib/NNSimple/NNSimpleOps.cpp`, implement `QuantizeOp::verify` to enforce:
+- `input` and `output` share element type, shape, and layout → `"input and output must share element type, shape, and layout"`
+- `input` must NOT be quantized → `"input must not already be quantized"`
+- `output` must be quantized → `"output must be quantized (carry scale and zero_point)"`
 
 ### Files to edit
 
 | File | What |
 |---|---|
-| `include/NNSimple/NNSimpleTypes.td` | Define `NNSimple_QuantizedType`. Stub comment shows where. |
+| `include/NNSimple/NNSimpleTypes.td` | Add optional params, switch to `hasCustomAssemblyFormat`, uncomment helper |
+| `lib/NNSimple/NNSimpleTypes.cpp` | Implement `TensorType::parse` and `TensorType::print` |
+| `include/NNSimple/NNSimpleOps.td` | Uncomment `NNSimple_QuantizeOp` |
+| `lib/NNSimple/NNSimpleOps.cpp` | Implement `QuantizeOp::verify` |
 
-Nothing else — types auto-register via `GET_TYPEDEF_LIST` in `NNSimpleTypes.cpp`.
+The test (`test/NNSimple/quantized-type.mlir`) is already in the repo — don't edit it. Just make it pass.
 
 ### Hints
 
-- Look at `NNSimple_TensorType` right above your stub — it's the closest match. Copy its structure and swap out the parameter list.
-- **Why `FloatAttr` and not `double`?** TypeDef auto-generates a hash of all parameters for uniquing. `llvm::hash_combine` doesn't accept plain `double` (it requires integer-hashable types). `FloatAttr` is a hashable MLIR attribute — the clean way to hold a float in a type parameter. Upstream MLIR types that hold floats (e.g. the Complex dialect) use either `FloatAttr` or `APFloatParameter` with custom assembly.
-- Parameter list:
-  ```tablegen
-  let parameters = (ins
-      TypeParameter<"::mlir::FloatType", "float element type">:$elementType,
-      ArrayRefParameter<"int64_t", "shape">:$shape,
-      "::mlir::FloatAttr":$scale,
-      "int64_t":$zeroPoint);
-  ```
-- `assemblyFormat` — the DSL handles `FloatAttr` natively (prints as `0.1 : f64`, parses bare `0.1` too):
-  ```tablegen
-  let assemblyFormat = "`<` $elementType `,` `[` $shape `]` `,` $scale `,` $zeroPoint `>`";
-  ```
+**Why optional params instead of a separate `!nnsimple.quantized` type?** Reuses the existing type and all the ops/passes that already accept `NNSimple_TensorType` automatically work for quantized tensors too. A separate type would require duplicating every op's type constraint or writing a type-constraint union.
+
+**Why FloatAttr / IntegerAttr and not plain `double` / `int64_t`?** TypeDef auto-hashes every parameter for uniquing. `llvm::hash_combine` doesn't accept plain `double`; MLIR's attribute types (which are hashable) are the idiomatic workaround.
+
+**Parser tips:**
+- `parser.parseLess()`, `parser.parseGreater()` — angle brackets.
+- `parser.parseType(someFloatType)` — parses `f32`, `f64`, etc.
+- `parser.parseLSquare()`, `parser.parseRSquare()`, `parser.parseCommaSeparatedList(lambda)` — for the shape `[...]`.
+- `parser.parseKeyword(&stringRef)` — for `NCHW`, `NHWC`, `scale`, `zero_point`.
+- `symbolizeDataLayout(keyword)` — turns a layout keyword back into the `DataLayout` enum (defined by the `I32EnumAttr` in `NNSimpleTypes.td`).
+- `parser.parseAttribute(floatAttrOrIntegerAttr)` — parses `0.1` as `FloatAttr`, `128` as `IntegerAttr`.
+- `parser.parseOptionalComma()` — the quant tail is optional.
+
+**Printer tips:**
+- `printer << "<" << getElementType() << ", [";`
+- `llvm::interleaveComma(getShape(), printer);`
+- `printer << "], " << stringifyDataLayout(getLayout());`
+- `if (isQuantized()) printer << ", scale " << getScale() << ", zero_point " << getZeroPoint();`
+
+**Verifier tips:** `llvm::cast<nnsimple::TensorType>(getInput().getType())` gets you the typed handle; then `.getElementType()`, `.getShape()`, `.getLayout()`, `.isQuantized()`, `.getScale()`, `.getZeroPoint()`.
 
 ### Done when
 
+`test/NNSimple/quantized-type.mlir` goes from red to green. It has 6 cases:
+1. Plain tensor roundtrip (backward compat)
+2. Quantized tensor roundtrip
+3. `nnsimple.quantize` positive case
+4. Double-quantize rejected
+5. Unquantized output rejected
+6. Shape mismatch rejected
+
 ```bash
-cd build && ninja check-nnsimple
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/quantized-type.mlir   # should PASS
 ```
 
-passes. The test `test/NNSimple/quantized-type.mlir` parses `<f32, [4], 0.1, 128>`, re-prints, and parses again through `nnsimple-opt | nnsimple-opt`. If your printer and parser agree, FileCheck passes.
+Or manually:
+```bash
+./bin/nnsimple-opt ../test/NNSimple/quantized-type.mlir -split-input-file -verify-diagnostics \
+    | /path/to/llvm-project/build/bin/FileCheck ../test/NNSimple/quantized-type.mlir
+```
 
 ### Stretch
 
-- Write a hand-written parser/printer for the quantized type in `NNSimpleTypes.cpp` (removing `assemblyFormat` and setting `let hasCustomAssemblyFormat = 1;`) — useful for learning the C++ API when you need logic in parsing (e.g. default values for missing `zeroPoint`).
-- Add a `nnsimple.quantize` op that takes an `!nnsimple.tensor<f32, ...>` and produces an `!nnsimple.quantized<...>` (just a type coercion for now — no actual quantization math).
+- Print `scale` and `zero_point` without the `: f64`/`: i64` type suffix for nicer output (you'll need to reach into the `FloatAttr`/`IntegerAttr` APIs: `.getValueAsDouble()`, `.getInt()`).
+- Add a `nnsimple.dequantize` op (inverse of `quantize`).
+- Propagate quantization through the lowering: make `-nnsimple-lower-to-linalg` carry scale/zero_point as attributes on the resulting linalg op (requires touching the type converter).
 
 
 ---
@@ -294,6 +356,8 @@ When either operand is non-constant, the fold must NOT fire.
 | `include/NNSimple/NNSimpleOps.td` | Uncomment `let hasFolder = 1;` inside `NNSimple_MulOp`. |
 | `lib/NNSimple/NNSimpleOps.cpp` | Implement `MulOp::fold`. Stub shown above `AddOp::fold`. |
 
+The test for this exercise (`test/NNSimple/mul-fold.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 ### Hints
 
 - `AddOp::fold` a few lines below your stub is the exact template. Only difference: use `APFloat::multiply(..., APFloat::rmNearestTiesToEven)` instead of `.add(...)`.
@@ -303,11 +367,12 @@ When either operand is non-constant, the fold must NOT fire.
 
 ### Done when
 
-```bash
-cd build && ninja check-nnsimple
-```
+`test/NNSimple/mul-fold.mlir` goes from red to green. It has one fold case and one no-fold case.
 
-passes. `test/NNSimple/mul-fold.mlir` has one fold case and one no-fold case.
+```bash
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/mul-fold.mlir   # should PASS
+```
 
 ### Stretch
 
@@ -349,6 +414,8 @@ Because `MulOp` has the `Commutative` trait, the canonicalizer moves constants t
 | `include/NNSimple/NNSimpleOps.td` | Uncomment `let hasCanonicalizer = 1;` inside `NNSimple_MulOp`. |
 | `lib/NNSimple/NNSimpleOps.cpp` | Implement `MulOneElimination`, `MulZeroElimination`, and `MulOp::getCanonicalizationPatterns`. Stubs are in the file. |
 
+The test for this exercise (`test/NNSimple/mul-canonicalize.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 ### Hints
 
 - `AddZeroElimination` just above your stubs is the exact template for `MulOneElimination` (swap `.isZero()` → `.isOne()`, i.e. `floatVal.convertToDouble() == 1.0` or `APFloat::getOne(...).bitwiseIsEqual(floatVal)`).
@@ -362,11 +429,12 @@ Because `MulOp` has the `Commutative` trait, the canonicalizer moves constants t
 
 ### Done when
 
-```bash
-cd build && ninja check-nnsimple
-```
+`test/NNSimple/mul-canonicalize.mlir` goes from red to green. It has 3 cases: `x*1`, `1*x` (commutative swap), `x*0`.
 
-passes. `test/NNSimple/mul-canonicalize.mlir` has 3 cases: `x*1`, `1*x` (commutative swap), `x*0`.
+```bash
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/mul-canonicalize.mlir   # should PASS
+```
 
 ### Stretch
 
@@ -380,7 +448,7 @@ passes. `test/NNSimple/mul-canonicalize.mlir` has 3 cases: `x*1`, `1*x` (commuta
 
 **Concepts**: TableGen-declared passes, `OpRewritePattern`, greedy pattern rewrite driver, multi-operand pattern matching.
 
-**Time**: ~3h.
+**Time**: ~1.5h.
 
 ### Task
 
@@ -404,49 +472,39 @@ Write an optimization pass that fuses `add(mul(a, b), c)` into a single `fused_m
 | `include/NNSimple/NNSimplePasses.td` | Uncomment `NNSimpleFuseMulAdd`. |
 | `lib/NNSimple/NNSimpleFuseMulAdd.cpp` | Implement the pattern and the pass body. Starter skeleton provided. |
 
+The test for this exercise (`test/NNSimple/fuse-mul-add.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 The pass is auto-registered with `nnsimple-opt` once declared in the `.td` — no changes needed to `nnsimple-opt.cpp`.
 
 ### Hints
 
-- **The op**: three-operand equivalent of `NNSimple_FusedAddReluOp` (lines ~83-96 of `NNSimpleOps.td`). Use `(ins NNSimple_TensorType:$a, NNSimple_TensorType:$b, NNSimple_TensorType:$c)`. Assembly format extends naturally:
-  ```tablegen
-  let assemblyFormat = [{
-      $a `,` $b `,` $c attr-dict `:` `(` type($a) `,` type($b) `,` type($c) `)` `->` type($result)
-  }];
-  ```
-- **The pattern**: mirror `NNSimpleFuseAddReluRewriter` in `lib/NNSimple/NNSimplePasses.cpp` lines 24-42. Match `AddOp`, check that either operand comes from a single-use `MulOp`:
-  ```cpp
-  class FuseMulAddRewriter : public OpRewritePattern<AddOp> {
-    LogicalResult matchAndRewrite(AddOp addOp, PatternRewriter &rewriter) const override {
-      // Try lhs-is-mul first, then rhs-is-mul.
-      for (auto [maybeMul, other] : {std::pair{addOp.getLhs(), addOp.getRhs()},
-                                     std::pair{addOp.getRhs(), addOp.getLhs()}}) {
-        auto mulOp = maybeMul.getDefiningOp<MulOp>();
-        if (!mulOp || !mulOp->hasOneUse()) continue;
-        auto fused = FusedMulAddOp::create(rewriter, addOp.getLoc(), addOp.getResult().getType(),
-                                            mulOp.getLhs(), mulOp.getRhs(), other);
-        rewriter.replaceOp(addOp, fused.getResult());
-        rewriter.eraseOp(mulOp);
-        return success();
-      }
-      return failure();
-    }
-  };
-  ```
+- **The op**: three-operand equivalent of `NNSimple_FusedAddReluOp` (lines ~83-96 of `NNSimpleOps.td`). The existing op has two operands — yours has three. The assembly format extends the same way.
+- **The pattern**: mirror `NNSimpleFuseAddReluRewriter` in `lib/NNSimple/NNSimplePasses.cpp` (lines 24-42). That one matches `ReluOp` and looks for an `AddOp` producing its input. Yours matches `AddOp` and looks for a single-use `MulOp` producing either operand.
+  - Use `Value::getDefiningOp<MulOp>()` to check the producing op.
+  - Use `op->hasOneUse()` for the safety check.
+  - Use `rewriter.replaceOp(addOp, fused.getResult())` + `rewriter.eraseOp(mulOp)` to swap in the new op.
+- **Commuted pattern**: remember `add(c, mul(a,b))` should also fuse — try each operand of the add.
 - **The pass body**: look at `NNSimpleFuseAddRelu::runOnOperation` (same file, lines 50-57). Build a `RewritePatternSet`, add your rewriter, call `applyPatternsGreedily(func, ...)`.
 
 ### Done when
 
+`test/NNSimple/fuse-mul-add.mlir` goes from red to green. It has a positive case (simple `(a*b)+c`) and a negative case (multi-use mul — must NOT fuse).
+
 ```bash
-cd build && ninja check-nnsimple
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/fuse-mul-add.mlir   # should PASS
 ```
 
-passes. `test/NNSimple/fuse-mul-add.mlir` has a positive case (simple `(a*b)+c`) and a negative case (multi-use mul — must NOT fuse).
+Or manually:
+```bash
+./bin/nnsimple-opt ../test/NNSimple/fuse-mul-add.mlir -nnsimple-fuse-mul-add \
+    | /path/to/llvm-project/build/bin/FileCheck ../test/NNSimple/fuse-mul-add.mlir
+```
 
 ### Stretch
 
-- Fuse across commuted pattern: `add(c, mul(a, b))` (the `for` loop above already handles this).
 - Add a `negate_c` boolean pass option: when set, treat the pass as fusing `add(mul(a,b), neg(c))` into a new `fused_mul_sub` op. Demonstrates pass options (see the `enable-fuse-add-relu` flag in `NNSimplePasses.cpp:61-66` for the pattern).
+- Also handle `sub(mul(a, b), c) → fused_mul_sub(a, b, c)` once F-01's `sub` op is in place.
 
 
 ---
@@ -480,45 +538,35 @@ Don't touch non-`Pure` ops even if their result is unused (e.g. `func.call` to a
 |---|---|
 | `lib/NNSimple/NNSimpleDCE.cpp` | Implement `runOnOperation`. Starter skeleton provided. |
 
+The test for this exercise (`test/NNSimple/dce.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 The pass is already declared in `NNSimplePasses.td` and wired into CMake — auto-registered with `nnsimple-opt`.
 
 ### Hints
 
-- Walking the IR:
-  ```cpp
-  // #include "mlir/Interfaces/SideEffectInterfaces.h"  — for mlir::isPure
-  SmallVector<Operation *> toErase;
-  func.walk([&](Operation *op) {
-    // mlir::isPure(op) is the free-function way to query the Pure trait.
-    // Also guard against ops with no results (like func.return) — they
-    // satisfy use_empty() trivially but you don't want to erase terminators.
-    if (mlir::isPure(op) && op->use_empty() && op->getNumResults() > 0)
-      toErase.push_back(op);
-  });
-  for (Operation *op : toErase) op->erase();
-  ```
-- **Collect-then-erase, in a fixed-point loop**: `walk()` misbehaves if you erase during traversal. Collect first, erase after. And because erasing one op can leave its operands dead, you need a fixed-point loop (the test's third case — `drop_dead_chain` — has a `relu` whose operand `add` is dead; one pass erases the `relu`, the second erases the `add`):
-  ```cpp
-  bool changed = true;
-  while (changed) {
-    changed = false;
-    SmallVector<Operation *> toErase;
-    func.walk([&](Operation *op) {
-      if (mlir::isPure(op) && op->use_empty() && op->getNumResults() > 0)
-        toErase.push_back(op);
-    });
-    for (Operation *op : toErase) { op->erase(); changed = true; }
-  }
-  ```
-- `func::FuncOp` (the pass's target op) comes from `getOperation()`.
+- The pass's target op comes from `getOperation()` — for this pass that's a `func::FuncOp`.
+- Read [Understanding the IR Structure — Operation Walkers](https://mlir.llvm.org/docs/Tutorials/UnderstandingTheIRStructure/#operation-walkers) for how to traverse the IR with `op.walk(...)`.
+- To query the `Pure` trait, `#include "mlir/Interfaces/SideEffectInterfaces.h"` and call the free function `mlir::isPure(op)`.
+- To check whether an op's result is consumed: `op->use_empty()`.
+- Two gotchas to think through yourself:
+  - If you call `op->erase()` from inside `walk()`, things break. Why? How would you work around it?
+  - `func.return` satisfies `use_empty()` trivially (it has no results). You don't want to erase terminators. What extra check keeps it alive?
+- **Fixed-point loop**: the third test case (`drop_dead_chain`) has a `relu` whose operand `add` is also dead. A single DCE pass erases the `relu`, but at that point the `add` still existed when you collected dead ops, so it survives that iteration. Loop until nothing changes.
 
 ### Done when
 
+`test/NNSimple/dce.mlir` goes from red to green. It has 3 cases: simple dead op, used op preserved, chain of dead ops (requires the fixed-point loop).
+
 ```bash
-cd build && ninja check-nnsimple
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/dce.mlir   # should PASS
 ```
 
-passes. `test/NNSimple/dce.mlir` has 3 cases: simple dead op, used op preserved, chain of dead ops (requires the loop).
+Or manually:
+```bash
+./bin/nnsimple-opt ../test/NNSimple/dce.mlir -nnsimple-dce \
+    | /path/to/llvm-project/build/bin/FileCheck ../test/NNSimple/dce.mlir
+```
 
 ### Stretch
 
@@ -534,6 +582,8 @@ passes. `test/NNSimple/dce.mlir` has 3 cases: simple dead op, used op preserved,
 **Concepts**: `OpConversionPattern`, dialect conversion, `TypeConverter`.
 
 **Time**: ~2h.
+
+> ⚠️ **D-01 and D-02 are the toughest exercises in the set.** If your MLIR background is brand new, don't worry if you don't finish D-02 — the conceptual walk-through is more important than a green test. Please do make it to D-01 at least; the lowering pattern here shows up in every real MLIR dialect.
 
 ### Setup
 
@@ -563,6 +613,8 @@ func.func @f(%a: tensor<4x4xf32>, %b: tensor<4x4xf32>) -> tensor<4x4xf32> {
 |---|---|
 | `lib/NNSimple/NNSimpleLinalgLowering.cpp` | Define `SubOpLowering` (mirror `AddOpLowering`), register it in the `patterns.add<...>` call near the bottom. Stub shown above `MulOpLowering`. |
 
+The test for this exercise (`test/NNSimple/sub-lowering.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 ### Hints
 
 - `AddOpLowering` right above your stub is the exact template. Differences:
@@ -577,11 +629,18 @@ func.func @f(%a: tensor<4x4xf32>, %b: tensor<4x4xf32>) -> tensor<4x4xf32> {
 
 ### Done when
 
+`test/NNSimple/sub-lowering.mlir` goes from red to green. The CHECK lines verify the lowered IR contains `tensor.empty` + `linalg.sub`.
+
 ```bash
-cd build && ninja check-nnsimple
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/sub-lowering.mlir   # should PASS
 ```
 
-passes. `test/NNSimple/sub-lowering.mlir` checks that the lowered IR contains `tensor.empty` + `linalg.sub`.
+Or manually:
+```bash
+./bin/nnsimple-opt ../test/NNSimple/sub-lowering.mlir -nnsimple-lower-to-linalg \
+    | /path/to/llvm-project/build/bin/FileCheck ../test/NNSimple/sub-lowering.mlir
+```
 
 ### Stretch
 
@@ -597,6 +656,10 @@ passes. `test/NNSimple/sub-lowering.mlir` checks that the lowered IR contains `t
 
 **Time**: ~3h.
 
+> ⚠️ **D-02 is the hardest exercise in the set.** It's mostly reading (figuring out which passes are needed, in which order, and why), not writing C++. If you're running short on day 2, it's fine to only read through the pipeline and understand *why* each pass is there — the CHECK test is a bonus goal, not a gate.
+>
+> **Recommended reading**: [MLIR Bufferization docs](https://mlir.llvm.org/docs/Bufferization/) — explains the tensor→memref conversion that `--one-shot-bufferize` performs, which is the most confusing pass in the pipeline.
+
 ### Task
 
 Take an nnsimple-dialect function and lower it all the way to the LLVM dialect (ready for JIT execution). Your job is to compose the right sequence of conversion passes so that after your pipeline, the module contains only LLVM-dialect ops — no `nnsimple`, no `linalg`, no `tensor`.
@@ -607,7 +670,7 @@ Take an nnsimple-dialect function and lower it all the way to the LLVM dialect (
 |---|---|
 | `test/Integration/add-relu-e2e.mlir` | Replace the `// RUN:` line with the correct pipeline. |
 
-Only the RUN line changes — no C++.
+Only the RUN line changes — no C++. The `.mlir` body and the CHECK lines at the bottom are already in the repo — don't edit them. Just make the RUN line run the right pipeline.
 
 ### Pipeline
 
@@ -642,11 +705,18 @@ nnsimple-opt %s -nnsimple-pipeline \
 
 ### Done when
 
+`test/Integration/add-relu-e2e.mlir` goes from red to green. The CHECK lines look for `llvm.func @kernel`, `llvm.fadd`, `llvm.intr.maximum`, with CHECK-NOT lines making sure there's no leftover `nnsimple.`, `linalg.`, or `tensor.empty`.
+
 ```bash
-cd build && ninja check-nnsimple
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/Integration/add-relu-e2e.mlir   # should PASS
 ```
 
-passes. The test file contains CHECK lines looking for `llvm.func @kernel`, `llvm.fadd`, `llvm.intr.maximum`, and CHECK-NOT lines making sure there's no leftover `nnsimple.`, `linalg.`, or `tensor.empty` in the output.
+Or run the pipeline manually to see the intermediate IR:
+```bash
+./bin/nnsimple-opt ../test/Integration/add-relu-e2e.mlir -nnsimple-pipeline \
+    | /path/to/llvm-project/build/bin/mlir-opt --one-shot-bufferize=... ...
+```
 
 ### Stretch — actually JIT-execute the function and print the result
 
