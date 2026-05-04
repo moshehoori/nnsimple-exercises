@@ -4,6 +4,10 @@
 
 **Time**: ~3h.
 
+> ⚠️ **D-02 is the hardest exercise in the set.** It's mostly reading (figuring out which passes are needed, in which order, and why), not writing C++. If you're running short on day 2, it's fine to only read through the pipeline and understand *why* each pass is there — the CHECK test is a bonus goal, not a gate.
+>
+> **Recommended reading**: [MLIR Bufferization docs](https://mlir.llvm.org/docs/Bufferization/) — explains the tensor→memref conversion that `--one-shot-bufferize` performs, which is the most confusing pass in the pipeline.
+
 ## Task
 
 Take an nnsimple-dialect function and lower it all the way to the LLVM dialect (ready for JIT execution). Your job is to compose the right sequence of conversion passes so that after your pipeline, the module contains only LLVM-dialect ops — no `nnsimple`, no `linalg`, no `tensor`.
@@ -14,7 +18,7 @@ Take an nnsimple-dialect function and lower it all the way to the LLVM dialect (
 |---|---|
 | `test/Integration/add-relu-e2e.mlir` | Replace the `// RUN:` line with the correct pipeline. |
 
-Only the RUN line changes — no C++.
+Only the RUN line changes — no C++. The `.mlir` body and the CHECK lines at the bottom are already in the repo — don't edit them. Just make the RUN line run the right pipeline.
 
 ## Pipeline
 
@@ -49,11 +53,18 @@ nnsimple-opt %s -nnsimple-pipeline \
 
 ## Done when
 
+`test/Integration/add-relu-e2e.mlir` goes from red to green. The CHECK lines look for `llvm.func @kernel`, `llvm.fadd`, `llvm.intr.maximum`, with CHECK-NOT lines making sure there's no leftover `nnsimple.`, `linalg.`, or `tensor.empty`.
+
 ```bash
-cd build && ninja check-nnsimple
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/Integration/add-relu-e2e.mlir   # should PASS
 ```
 
-passes. The test file contains CHECK lines looking for `llvm.func @kernel`, `llvm.fadd`, `llvm.intr.maximum`, and CHECK-NOT lines making sure there's no leftover `nnsimple.`, `linalg.`, or `tensor.empty` in the output.
+Or run the pipeline manually to see the intermediate IR:
+```bash
+./bin/nnsimple-opt ../test/Integration/add-relu-e2e.mlir -nnsimple-pipeline \
+    | /path/to/llvm-project/build/bin/mlir-opt --one-shot-bufferize=... ...
+```
 
 ## Stretch — actually JIT-execute the function and print the result
 
