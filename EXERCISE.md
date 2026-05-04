@@ -37,11 +37,12 @@ The test for this exercise (`test/NNSimple/mul-fold.mlir`) is already in the rep
 
 ## Done when
 
-```bash
-cd build && ninja check-nnsimple
-```
+`test/NNSimple/mul-fold.mlir` goes from red to green. It has one fold case and one no-fold case.
 
-passes. `test/NNSimple/mul-fold.mlir` has one fold case and one no-fold case.
+```bash
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/mul-fold.mlir   # should PASS
+```
 
 ## Stretch
 
