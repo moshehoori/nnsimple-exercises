@@ -4,6 +4,8 @@
 
 **Time**: ~2h.
 
+> ⚠️ **D-01 and D-02 are the toughest exercises in the set.** If your MLIR background is brand new, don't worry if you don't finish D-02 — the conceptual walk-through is more important than a green test. Please do make it to D-01 at least; the lowering pattern here shows up in every real MLIR dialect.
+
 ## Setup
 
 F-01's `nnsimple.sub` op is already pre-filled in this starter (so you don't have to re-do F-01 here). Your job is to teach `-nnsimple-lower-to-linalg` how to lower it.
@@ -32,6 +34,8 @@ func.func @f(%a: tensor<4x4xf32>, %b: tensor<4x4xf32>) -> tensor<4x4xf32> {
 |---|---|
 | `lib/NNSimple/NNSimpleLinalgLowering.cpp` | Define `SubOpLowering` (mirror `AddOpLowering`), register it in the `patterns.add<...>` call near the bottom. Stub shown above `MulOpLowering`. |
 
+The test for this exercise (`test/NNSimple/sub-lowering.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 ## Hints
 
 - `AddOpLowering` right above your stub is the exact template. Differences:
@@ -46,11 +50,18 @@ func.func @f(%a: tensor<4x4xf32>, %b: tensor<4x4xf32>) -> tensor<4x4xf32> {
 
 ## Done when
 
+`test/NNSimple/sub-lowering.mlir` goes from red to green. The CHECK lines verify the lowered IR contains `tensor.empty` + `linalg.sub`.
+
 ```bash
-cd build && ninja check-nnsimple
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/sub-lowering.mlir   # should PASS
 ```
 
-passes. `test/NNSimple/sub-lowering.mlir` checks that the lowered IR contains `tensor.empty` + `linalg.sub`.
+Or manually:
+```bash
+./bin/nnsimple-opt ../test/NNSimple/sub-lowering.mlir -nnsimple-lower-to-linalg \
+    | /path/to/llvm-project/build/bin/FileCheck ../test/NNSimple/sub-lowering.mlir
+```
 
 ## Stretch
 
