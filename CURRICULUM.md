@@ -36,27 +36,37 @@ Foundation   →   Ops & Types   →   Folders/Canon   →   Passes       →   
 
 ## How to do an exercise
 
+Every starter branch ships with a **pre-written FileCheck test** — you don't write tests, you only write the code that makes them pass. Each `EXERCISE.md` tells you which test file belongs to the exercise (e.g. `test/NNSimple/sub-ops.mlir` for F-01).
+
 ```bash
-# Pick the exercise you want
+# Pick the exercise
 git checkout starter/F-01
 
 # Read the task
 cat EXERCISE.md
 
-# See the failing test (look for the exercise's own test failing)
-cd build && ninja check-nnsimple
+# Confirm the exercise's test is red to start with
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/sub-ops.mlir   # expect FAIL
 
-# Edit files. When done, the exercise's test goes green:
-ninja check-nnsimple
+# Edit files (NNSimpleOps.td, NNSimpleOps.cpp, etc.)
+ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/sub-ops.mlir   # expect PASS
 
-# Optional: save your work on a personal branch before moving on
+# Optional: save your work on a personal branch
 git checkout -b $USER/F-01
 git commit -am "F-01 done"
 ```
 
-Run a single exercise's test only (faster feedback loop):
+You can also run the test manually without lit for quick iteration:
 ```bash
-llvm-lit -v ../test/NNSimple/sub-ops.mlir
+./bin/nnsimple-opt ../test/NNSimple/sub-ops.mlir -split-input-file -verify-diagnostics \
+    | /path/to/llvm-project/build/bin/FileCheck ../test/NNSimple/sub-ops.mlir
+```
+
+Or run the full suite (most other tests have pre-existing baseline failures — see below):
+```bash
+ninja check-nnsimple
 ```
 
 ### A note on baseline failures
