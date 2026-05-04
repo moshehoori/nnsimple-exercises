@@ -46,11 +46,12 @@ The test for this exercise (`test/NNSimple/mul-canonicalize.mlir`) is already in
 
 ## Done when
 
-```bash
-cd build && ninja check-nnsimple
-```
+`test/NNSimple/mul-canonicalize.mlir` goes from red to green. It has 3 cases: `x*1`, `1*x` (commutative swap), `x*0`.
 
-passes. `test/NNSimple/mul-canonicalize.mlir` has 3 cases: `x*1`, `1*x` (commutative swap), `x*0`.
+```bash
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/mul-canonicalize.mlir   # should PASS
+```
 
 ## Stretch
 
