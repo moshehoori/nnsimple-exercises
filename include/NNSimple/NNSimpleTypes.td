@@ -46,48 +46,56 @@ class NNSimple_Type<string name, string typeMnemonic, list<Trait> traits = []>
 }
 
 def NNSimple_TensorType : NNSimple_Type<"Tensor", "tensor"> {
-    let summary = "A tensor type with explicit layout information.";
+    let summary = "A tensor type with explicit layout (and optional quant info).";
     let description = [{
         The `nnsimple.tensor` type represents a tensor with explicit layout
-        information. It includes the element type, shape, and a data layout enum.
+        information. It includes the element type, shape, a data layout enum,
+        and optionally scale + zero_point for quantization.
 
-        Example:
+        Examples:
 
         ```mlir
         !nnsimple.tensor<f32, [4, 4], NHWC>
+        !nnsimple.tensor<f32, [4], NCHW, scale 0.1, zero_point 128>
         ```
     }];
 
+    // ========================================================================
+    // EXERCISE A-02 (part 1/3): add two OPTIONAL parameters below so a tensor
+    // type can carry quantization info.
+    //
+    //   `OptionalParameter<"::mlir::FloatAttr">:$scale,`
+    //   `OptionalParameter<"::mlir::IntegerAttr">:$zeroPoint`
+    //
+    // Keep the existing three parameters (elementType, shape, layout).
+    // The OptionalParameter wrapper allows the old
+    //   !nnsimple.tensor<f32, [4, 4], NHWC>
+    // syntax to continue parsing (both params default to null).
+    // ========================================================================
     let parameters = (ins TypeParameter<"::mlir::FloatType", "float element type">:$elementType,
                          ArrayRefParameter<"int64_t", "shape">:$shape,
                          EnumParameter<NNSimple_DataLayout>:$layout);
-                         
-    
-    let assemblyFormat = "`<` $elementType `,` `[` $shape `]` `,` $layout `>`";
-}
 
-// ============================================================================
-// EXERCISE A-02: Define a `!nnsimple.quantized` type.
-//
-// Parameters:
-//   - elementType: FloatType (e.g. f32)
-//   - shape:       ArrayRef<int64_t>
-//   - scale:       double-like (use `"double"` as the C++ type)
-//   - zeroPoint:   int64_t
-//
-// Example assembly syntax (your assemblyFormat must accept this):
-//   !nnsimple.quantized<f32, [4], 0.1, 128>
-//
-// Mirror NNSimple_TensorType (just above) for structure. Use TypeParameter
-// for scalar params, ArrayRefParameter for the shape.
-//
-// See EXERCISE.md at the repo root.
-// ============================================================================
-// def NNSimple_QuantizedType : NNSimple_Type<"Quantized", "quantized"> {
-//     let summary = "Quantized tensor with scale and zero-point.";
-//     // TODO: parameters and assemblyFormat — see EXERCISE.md for why scale
-//     // needs to be FloatAttr, not plain `double`.
-// }
+    // ========================================================================
+    // EXERCISE A-02 (part 2/3): swap the declarative `assemblyFormat` below
+    // for a hand-written parser and printer. Replace the line with
+    //   `let hasCustomAssemblyFormat = 1;`
+    // and implement `TensorType::parse` + `TensorType::print` in
+    // `lib/NNSimple/NNSimpleTypes.cpp`.
+    //
+    // Grammar you must accept:
+    //   `<` type `,` `[` comma-separated-ints `]` `,` layout-keyword
+    //       ( `,` `scale` float-attr `,` `zero_point` int-attr )? `>`
+    // ========================================================================
+    let assemblyFormat = "`<` $elementType `,` `[` $shape `]` `,` $layout `>`";
+
+    // EXERCISE A-02 (part 3/3): a convenience helper you'll use from the
+    // verifier of the new `nnsimple.quantize` op. Uncomment once `scale` and
+    // `zeroPoint` are real parameters.
+    // let extraClassDeclaration = [{
+    //   bool isQuantized() const { return getScale() && getZeroPoint(); }
+    // }];
+}
 
 def NNSimple_CustomType : NNSimple_Type<"Custom", "custom"> {
     let summary = "NNSimple custom type";

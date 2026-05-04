@@ -104,5 +104,21 @@ void ReluOp::getCanonicalizationPatterns(RewritePatternSet &results,
   results.add<ReluReluElimination>(context);
 }
 
+// ============================================================================
+// EXERCISE A-02: Implement QuantizeOp::verify here.
+//
+// Error messages the tests expect:
+//   "input and output must share element type, shape, and layout"
+//   "input must not already be quantized"
+//   "output must be quantized (carry scale and zero_point)"
+//
+// Use llvm::cast<nnsimple::TensorType>(value.getType()) to get at the type,
+// then call .getElementType(), .getShape(), .getLayout(), .isQuantized().
+// ============================================================================
+// LogicalResult QuantizeOp::verify() {
+//   // TODO
+//   return success();
+// }
+
 #define GET_OP_CLASSES
 #include "NNSimple/NNSimpleOps.cpp.inc"

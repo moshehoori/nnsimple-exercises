@@ -100,4 +100,28 @@ def ReluReluElimination : Pat<
   (NNSimple_ReluOp (NNSimple_ReluOp $input)),
   (NNSimple_ReluOp $input)>;
 
+// ============================================================================
+// EXERCISE A-02: Define the `nnsimple.quantize` op.
+//
+// The op takes a plain `!nnsimple.tensor` (no quant info) and produces a
+// `!nnsimple.tensor` of the same element type, shape, and layout, but with
+// scale and zero_point attached. It's a pure type coercion — no arithmetic.
+//
+// Keep Pure. Same operand and result "tensor shape/type/layout"; verifier
+// (in NNSimpleOps.cpp) enforces that the input must NOT be quantized and the
+// output MUST be quantized. Mirror NNSimple_ReluOp for the op skeleton.
+//
+// After uncommenting, also implement QuantizeOp::verify in
+// lib/NNSimple/NNSimpleOps.cpp.
+// ============================================================================
+// def NNSimple_QuantizeOp : NNSimple_Op<"quantize", [Pure]> {
+//     let summary = "Attach quantization params (scale, zero_point) to a tensor.";
+//     let arguments = (ins NNSimple_TensorType:$input);
+//     let results = (outs NNSimple_TensorType:$output);
+//     let assemblyFormat = [{
+//         $input attr-dict `:` type($input) `->` type($output)
+//     }];
+//     let hasVerifier = 1;
+// }
+
 #endif // NNSIMPLE_OPS
