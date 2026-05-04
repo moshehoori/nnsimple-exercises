@@ -45,11 +45,12 @@ The test for this exercise (`test/NNSimple/matmul.mlir`) is already in the repo 
 
 ## Done when
 
-```bash
-cd build && ninja check-nnsimple
-```
+`test/NNSimple/matmul.mlir` goes from red to green — 1 positive, 3 negatives (rank, inner dim, result shape).
 
-passes. The test file is `test/NNSimple/matmul.mlir` — 1 positive, 3 negatives (rank, inner dim, result shape).
+```bash
+cd build && ninja nnsimple-opt
+llvm-lit -v ../test/NNSimple/matmul.mlir   # should PASS
+```
 
 ## Stretch
 
