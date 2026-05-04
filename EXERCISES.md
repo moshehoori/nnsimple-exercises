@@ -1,26 +1,26 @@
 # NNSimple MLIR Exercises — Consolidated Reference
 
-One-page view of every exercise. For the 2-day schedule and team structure, see [CURRICULUM.md](CURRICULUM.md). For the branch workflow, `git checkout starter/<id>` and read the `EXERCISE.md` at the repo root on that branch (same content as this doc).
+Every learner works through all 10 exercises individually, roughly easiest → hardest. For the 2-day schedule see [CURRICULUM.md](CURRICULUM.md). Per exercise, `git checkout starter/<id>` to see the stubs and failing test; the `EXERCISE.md` on each starter branch is the same content as below.
 
 ## Contents
 
-**Foundation (all 12 learners, individually)**
+**Foundation**
 - [F-01 — Add the `nnsimple.sub` op](#f-01--add-the-nnsimplesub-op)
 - [F-02 — Add `nnsimple.neg` with a declarative canonicalization](#f-02--add-nnsimpleneg-with-a-declarative-canonicalization)
 
-**Track A — Ops & Type System**
+**Ops & Type System**
 - [A-01 — `nnsimple.matmul` with shape-compatibility verifier](#a-01--nnsimplematmul-with-shape-compatibility-verifier)
 - [A-02 — `!nnsimple.quantized` type](#a-02--nnsimplequantized-type)
 
-**Track B — Folders & Canonicalization**
+**Folders & Canonicalization**
 - [B-01 — Implement `MulOp::fold` for constant × constant](#b-01--implement-mulopfold-for-constant--constant)
 - [B-02 — Canonicalizations `mul(x, 1) → x` and `mul(x, 0) → 0`](#b-02--canonicalizations-mulx-1--x-and-mulx-0--0)
 
-**Track C — Transformation Passes**
+**Transformation Passes**
 - [C-01 — `-nnsimple-fuse-mul-add` pass](#c-01---nnsimple-fuse-mul-add-pass)
 - [C-02 — `-nnsimple-dce` dead-op elimination pass](#c-02---nnsimple-dce-dead-op-elimination-pass)
 
-**Track D — Lowering & E2E**
+**Lowering & E2E**
 - [D-01 — Lower `nnsimple.sub` to `linalg.sub`](#d-01--lower-nnsimplesub-to-linalgsub)
 - [D-02 — Lower all the way to LLVM](#d-02--lower-all-the-way-to-llvm)
 

@@ -4,17 +4,29 @@ A hands-on introduction to MLIR compiler development for a team of 12, built on 
 
 **For the detailed per-exercise spec (task, files, hints, done-criteria) see [EXERCISES.md](EXERCISES.md).**
 
+## Format
+
+Everyone does **all 10 exercises individually**. No groups, no tracks — every learner works through the same sequence.
+
+The 10 exercises are ordered roughly from easiest to hardest:
+
+```
+Foundation   →   Ops & Types   →   Folders/Canon   →   Passes       →   Lowering
+ F-01, F-02       A-01, A-02        B-01, B-02         C-01, C-02       D-01, D-02
+```
+
 ## Schedule
 
-| When | What | Who |
-|---|---|---|
-| Pre-event | Laptop setup: build MLIR, build nnsimple, run `ninja check-nnsimple` green | Everyone, solo |
-| Day 1 AM (~3h) | Foundation exercises F-01, F-02 | Everyone, solo |
-| Day 1 lunch | Show-and-tell: 2-3 people walk their diff | Everyone |
-| Day 1 PM (~4h) | Form groups of 3, each group picks a track, start exercise #1 | 4 groups |
-| Day 2 AM (~4h) | Finish exercise #1, start exercise #2 | Groups |
-| Day 2 PM (~3h) | Finish exercise #2 | Groups |
-| Day 2 end (~1h) | Each group does a 5-min demo of what they built | Everyone |
+| When | What |
+|---|---|
+| Pre-event | Laptop setup: build MLIR, build nnsimple, run `ninja check-nnsimple` green |
+| Day 1 AM (~3h) | F-01, F-02 (foundation) |
+| Day 1 PM (~4h) | A-01, A-02, B-01 (ops/types, first folder) |
+| Day 2 AM (~4h) | B-02, C-01, C-02 (canonicalization, passes) |
+| Day 2 PM (~3h) | D-01, D-02 (lowering, E2E) |
+| Day 2 end (~1h) | Show-and-tell: 2-3 people walk their favorite diff |
+
+**Heads up on pacing**: 10 exercises in 2 days is tight for some learners (especially if it's your first contact with MLIR). That's intentional — the goal is exposure to every major concept, not polish. If you don't finish D-02, that's fine; come back to it later. If you fly through, the `## Stretch` sections in each `EXERCISE.md` have deeper follow-ons.
 
 ## How the repo is organized
 
@@ -63,38 +75,37 @@ llvm-lit -v ../test/NNSimple/neg-canonicalize.mlir   # F-02
 
 ## Exercises
 
-### Foundation — everyone, solo (~3h)
+Each exercise lives on its own `starter/<id>` branch. See [EXERCISES.md](EXERCISES.md) for full per-exercise specs (task, files, hints, done-criteria).
 
-| ID | Task | Concepts | Files |
-|---|---|---|---|
-| F-01 | Add `nnsimple.sub` op with verifier | TableGen op def, C++ verifier, Pure trait | `include/NNSimple/NNSimpleOps.td`, `lib/NNSimple/NNSimpleOps.cpp`, `test/NNSimple/sub-ops.mlir` |
-| F-02 | Add `nnsimple.neg` op + DRR canonicalization `neg(neg(x))→x` | Declarative rewrite rules, canonicalization | same three files |
+**Foundation**
+| ID | Task | Concepts |
+|---|---|---|
+| F-01 | Add `nnsimple.sub` op with verifier | TableGen op def, C++ verifier, Pure trait |
+| F-02 | Add `nnsimple.neg` op + DRR canonicalization `neg(neg(x))→x` | Declarative rewrite rules |
 
-### Tracks — groups of 3 pick one (~7h over day 1 PM + day 2)
-
-**Track A — Ops & Type System**
+**Ops & Type System**
 | ID | Task | Mirror |
 |---|---|---|
-| A-01 | `nnsimple.matmul` op with shape-compatibility verifier | `AddOp::verify` in `NNSimpleOps.cpp:35-47` |
-| A-02 | `!nnsimple.quantized<elementType, shape, scale, zero_point>` type | `TensorType` in `NNSimpleTypes.td:48-67` |
+| A-01 | `nnsimple.matmul` with shape-compatibility verifier | `AddOp::verify` cpp:35-47 |
+| A-02 | `!nnsimple.quantized<elementType, shape, scale, zero_point>` type | `TensorType` td:48-67 |
 
-**Track B — Folders & Canonicalization**
+**Folders & Canonicalization**
 | ID | Task | Mirror |
 |---|---|---|
-| B-01 | `MulOp::fold` for constant × constant | `AddOp::fold` in `NNSimpleOps.cpp:50-69` |
-| B-02 | C++ canonicalizations `mul(x,1)→x` and `mul(x,0)→0` | `AddZeroElimination` in `NNSimpleOps.cpp:72-98` |
+| B-01 | `MulOp::fold` for constant × constant | `AddOp::fold` cpp:50-69 |
+| B-02 | C++ canonicalizations `mul(x,1)→x`, `mul(x,0)→0` | `AddZeroElimination` cpp:72-98 |
 
-**Track C — Transformation Passes**
+**Transformation Passes**
 | ID | Task | Mirror |
 |---|---|---|
-| C-01 | `-nnsimple-fuse-mul-add` pass producing a new `FusedMulAddOp` | `NNSimpleFuseAddReluRewriter` in `NNSimplePasses.cpp:24-42` |
-| C-02 | `-nnsimple-dce` dead-op elimination using the `Pure` trait | Same file; `op->hasTrait<OpTrait::IsPure>()` + `op->use_empty()` |
+| C-01 | `-nnsimple-fuse-mul-add` pass (new `FusedMulAddOp`) | `NNSimpleFuseAddReluRewriter` cpp:24-42 |
+| C-02 | `-nnsimple-dce` dead-op elimination using the `Pure` trait | `mlir::isPure(op)` + `op->use_empty()` |
 
-**Track D — Lowering & E2E JIT**
+**Lowering & E2E**
 | ID | Task | Mirror |
 |---|---|---|
-| D-01 | Lower `nnsimple.sub` (from F-01) to `linalg.sub` | `AddOpLowering` in `NNSimpleLinalgLowering.cpp:59-76` |
-| D-02 | E2E JIT: run `add+relu` end-to-end with `mlir-cpu-runner`, CHECK output | upstream `mlir/test/Integration/Dialect/Linalg/CPU/` examples |
+| D-01 | Lower `nnsimple.sub` to `linalg.sub` | `AddOpLowering` cpp:59-76 |
+| D-02 | Lower `add+relu` all the way to LLVM dialect | upstream conversion passes |
 
 ## Build quick-reference
 
