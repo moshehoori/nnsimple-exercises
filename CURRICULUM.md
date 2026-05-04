@@ -2,6 +2,8 @@
 
 A hands-on introduction to MLIR compiler development for a team of 12, built on top of the `nnsimple` dialect. Learn by doing — no grading, no lectures beyond a kickoff.
 
+**For the detailed per-exercise spec (task, files, hints, done-criteria) see [EXERCISES.md](EXERCISES.md).**
+
 ## Schedule
 
 | When | What | Who |
