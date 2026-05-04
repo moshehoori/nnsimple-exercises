@@ -537,7 +537,7 @@ passes. `test/NNSimple/dce.mlir` has 3 cases: simple dead op, used op preserved,
 
 ### Setup
 
-F-01's `nnsimple.sub` op is already pre-filled in this starter (so Track D members don't have to do F-01 first). Your job is to teach `-nnsimple-lower-to-linalg` how to lower it.
+F-01's `nnsimple.sub` op is already pre-filled in this starter (so you don't have to re-do F-01 here). Your job is to teach `-nnsimple-lower-to-linalg` how to lower it.
 
 ### Task
 
