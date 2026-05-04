@@ -31,6 +31,8 @@ Because `MulOp` has the `Commutative` trait, the canonicalizer moves constants t
 | `include/NNSimple/NNSimpleOps.td` | Uncomment `let hasCanonicalizer = 1;` inside `NNSimple_MulOp`. |
 | `lib/NNSimple/NNSimpleOps.cpp` | Implement `MulOneElimination`, `MulZeroElimination`, and `MulOp::getCanonicalizationPatterns`. Stubs are in the file. |
 
+The test for this exercise (`test/NNSimple/mul-canonicalize.mlir`) is already in the repo — don't edit it. Just make it pass.
+
 ## Hints
 
 - `AddZeroElimination` just above your stubs is the exact template for `MulOneElimination` (swap `.isZero()` → `.isOne()`, i.e. `floatVal.convertToDouble() == 1.0` or `APFloat::getOne(...).bitwiseIsEqual(floatVal)`).
